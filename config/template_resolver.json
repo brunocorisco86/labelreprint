@@ -2,9 +2,9 @@
   "resolver_rules": {
     "terceiros_crescimento_comum": {
       "AGRIFIRM": "AGRIFIRM_4_CRESCIMENTO_CM.pdf",
+      "COAMO": "COAMO_4_CRESCIMENTO_CM.pdf",
       "COPACOL": "COPACOL_4_CRESCIMENTO_CM.pdf",
-      "LAR": "LAR_4_CRESCIMENTO_CM.pdf",
-      "COAMO": "CVALE_4_CRESCIMENTO_CM.pdf"
+      "LAR": "LAR_4_CRESCIMENTO_CM.pdf"
     },
     "fallback_cvale": {
       "1_PREINICIAL": {

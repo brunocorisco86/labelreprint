@@ -25,6 +25,31 @@
         }
       }
     },
+    "COAMO_4_CRESCIMENTO_CM.pdf": {
+      "fornecedor": "COAMO",
+      "fase": "4_CRESCIMENTO",
+      "tipo_racao": "CM",
+      "fields": {
+        "data_fabricacao": {
+          "x": 0,
+          "y": 0,
+          "font_size": 10,
+          "align": "left"
+        },
+        "lote": {
+          "x": 0,
+          "y": 0,
+          "font_size": 10,
+          "align": "left"
+        },
+        "data_validade": {
+          "x": 0,
+          "y": 0,
+          "font_size": 10,
+          "align": "left"
+        }
+      }
+    },
     "COPACOL_4_CRESCIMENTO_CM.pdf": {
       "fornecedor": "COPACOL",
       "fase": "4_CRESCIMENTO",
