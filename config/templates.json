@@ -31,20 +31,20 @@
       "tipo_racao": "CM",
       "fields": {
         "data_fabricacao": {
-          "x": 0,
-          "y": 0,
+          "x": 125,
+          "y": 610,
           "font_size": 10,
           "align": "left"
         },
         "lote": {
-          "x": 0,
-          "y": 0,
+          "x": 125,
+          "y": 580,
           "font_size": 10,
           "align": "left"
         },
         "data_validade": {
-          "x": 0,
-          "y": 0,
+          "x": 125,
+          "y": 640,
           "font_size": 10,
           "align": "left"
         }

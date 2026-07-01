@@ -95,7 +95,7 @@ class DataManager:
         Se a fábrica de terceiros não possuir template específico, usa o template da CVALE como fallback.
         """
         # Se for terceiros, verifica se temos o template de crescimento comum
-        if factory in ["COPACOL", "AGRIFIRM", "LAR"] and fase == "4_CRESCIMENTO" and tipo_racao == "CM":
+        if factory in ["COPACOL", "AGRIFIRM", "LAR", "COAMO"] and fase == "4_CRESCIMENTO" and tipo_racao == "CM":
             return f"{factory}_4_CRESCIMENTO_CM.pdf"
         
         # Caso contrário ou como fallback, usa os templates da CVALE
