@@ -7,7 +7,10 @@ import pandas as pd
 from src.core.generator import BatchGenerator, sanitize_folder_name
 from src.pdf.writer import PDFLabelWriter
 
-DATABASE_PATH = os.getenv("DATABASE_PATH", "data/processed/entregas_processadas.db")
+# Caminho raiz do projeto dinâmico
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
+DATABASE_PATH = os.getenv("DATABASE_PATH", os.path.join(PROJECT_ROOT, "data/processed/entregas_processadas.db"))
 
 def test_generate_selected_lotes(tmp_path):
     """
@@ -36,7 +39,7 @@ def test_generate_selected_lotes(tmp_path):
         conn.close()
         
     # Carrega as configurações de templates para identificar os fornecedores
-    with open("config/templates.json", "r", encoding="utf-8") as f:
+    with open(os.path.join(PROJECT_ROOT, "config/templates.json"), "r", encoding="utf-8") as f:
         templates_config = json.load(f).get("templates", {})
         
     # Associa o fornecedor a cada combinação

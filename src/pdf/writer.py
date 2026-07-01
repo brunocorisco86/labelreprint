@@ -9,8 +9,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TEMPLATES_CONFIG_PATH = "config/templates.json"
-TEMPLATES_DIR = os.getenv("TEMPLATES_DIR", "assets/RotulosTemplate")
+# Caminho raiz do projeto dinâmico
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+TEMPLATES_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config/templates.json")
+TEMPLATES_DIR = os.getenv("TEMPLATES_DIR", os.path.join(PROJECT_ROOT, "assets/RotulosTemplate"))
 
 class PDFLabelWriter:
     """
@@ -22,7 +25,7 @@ class PDFLabelWriter:
         self.config_path = config_path or TEMPLATES_CONFIG_PATH
         self.templates_dir = templates_dir or TEMPLATES_DIR
         self.configs = self._load_config()
-        self.shelf_life_path = "config/shelf_life.json"
+        self.shelf_life_path = os.path.join(PROJECT_ROOT, "config/shelf_life.json")
         self.shelf_life_configs = self._load_shelf_life()
 
     def _load_config(self):

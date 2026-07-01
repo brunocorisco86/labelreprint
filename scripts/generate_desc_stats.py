@@ -2,8 +2,11 @@ import sqlite3
 import pandas as pd
 import os
 
-DATABASE_PATH = "data/processed/entregas_processadas.db"
-OUTPUT_PATH = "docs/estatisticas_descritivas.md"
+# Caminho raiz do projeto dinâmico
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
+DATABASE_PATH = os.path.join(PROJECT_ROOT, "data/processed/entregas_processadas.db")
+OUTPUT_PATH = os.path.join(PROJECT_ROOT, "docs/estatisticas_descritivas.md")
 
 def generate_stats():
     if not os.path.exists(DATABASE_PATH):

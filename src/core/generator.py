@@ -8,8 +8,11 @@ from src.pdf.writer import PDFLabelWriter
 
 load_dotenv()
 
-DATABASE_PATH = os.getenv("DATABASE_PATH", "data/processed/entregas_processadas.db")
-EXPORT_DIR = os.getenv("EXPORT_DIR", "Export")
+# Caminho raiz do projeto dinâmico
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+DATABASE_PATH = os.getenv("DATABASE_PATH", os.path.join(PROJECT_ROOT, "data/processed/entregas_processadas.db"))
+EXPORT_DIR = os.getenv("EXPORT_DIR", os.path.join(PROJECT_ROOT, "Export"))
 DEFAULT_SHELF_LIFE = int(os.getenv("SHELF_LIFE_DAYS", "60"))
 
 def sanitize_folder_name(name):

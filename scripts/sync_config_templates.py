@@ -3,9 +3,12 @@ import glob
 import json
 import re
 
-TEMPLATES_DIR = "assets/RotulosTemplate"
-TEMPLATES_JSON_PATH = "config/templates.json"
-RESOLVER_JSON_PATH = "config/template_resolver.json"
+# Caminho raiz do projeto dinâmico
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
+TEMPLATES_DIR = os.path.join(PROJECT_ROOT, "assets/RotulosTemplate")
+TEMPLATES_JSON_PATH = os.path.join(PROJECT_ROOT, "config/templates.json")
+RESOLVER_JSON_PATH = os.path.join(PROJECT_ROOT, "config/template_resolver.json")
 
 def parse_template_name(filename):
     """

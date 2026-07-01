@@ -8,7 +8,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_PATH = os.getenv("DATABASE_PATH", "data/processed/entregas_processadas.db")
+# Caminho raiz do projeto dinâmico
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+DATABASE_PATH = os.getenv("DATABASE_PATH", os.path.join(PROJECT_ROOT, "data/processed/entregas_processadas.db"))
 
 class DataManager:
     """
@@ -95,7 +98,7 @@ class DataManager:
         print("[ETL] Iniciando carregamento dos dados brutos...")
         
         # 1. Carregar Regiões
-        regioes_file = "data/raw/RegioesAtualizadas/regioes_atualizadas_30_04_26.csv"
+        regioes_file = os.path.join(PROJECT_ROOT, "data/raw/RegioesAtualizadas/regioes_atualizadas_30_04_26.csv")
         print(f"[ETL] Lendo Regiões de: {regioes_file}")
         df_regioes = pd.read_csv(regioes_file)
         # Limpar chave Aviario
@@ -105,7 +108,7 @@ class DataManager:
         df_regioes['Extensionista'] = df_regioes['Extensionista'].fillna("Nao_Identificado").astype(str).str.strip()
         
         # 2. Carregar Filtro Lotes Ativos
-        filtro_file = "data/raw/FiltroLotesAtivos/FiltroLotesAtivos.xlsx"
+        filtro_file = os.path.join(PROJECT_ROOT, "data/raw/FiltroLotesAtivos/FiltroLotesAtivos.xlsx")
         print(f"[ETL] Lendo Filtro de Lotes Ativos de: {filtro_file}")
         df_filtro = pd.read_excel(filtro_file)
         df_filtro['FazendaLote'] = df_filtro['Fazenda'].astype(str) + '-' + df_filtro['Lote'].astype(str)
@@ -115,7 +118,7 @@ class DataManager:
         df_filtro['LoteAbatido'] = df_filtro['LoteAbatido'].astype(int)
         
         # 3. Carregar Fazendas
-        fazendas_file = "data/raw/ListagemGeralFazendas/ListagemGeralFazendas.xlsx"
+        fazendas_file = os.path.join(PROJECT_ROOT, "data/raw/ListagemGeralFazendas/ListagemGeralFazendas.xlsx")
         print(f"[ETL] Lendo Cadastro Geral de Fazendas de: {fazendas_file}")
         df_fazendas = pd.read_excel(fazendas_file)
         df_fazendas['Fazenda'] = pd.to_numeric(df_fazendas['Fazenda'], errors='coerce')
@@ -127,7 +130,7 @@ class DataManager:
         df_fazendas['Granja Global GAP'] = df_fazendas['Granja Global GAP'].isin(['VERDADEIRO', 'TRUE', '1', 'YES'])
         
         # 3. Carregar Entregas de Ração
-        entregas_pattern = "data/raw/EntregasRacao/*.xlsx"
+        entregas_pattern = os.path.join(PROJECT_ROOT, "data/raw/EntregasRacao/*.xlsx")
         entregas_files = glob.glob(entregas_pattern)
         print(f"[ETL] Encontrados {len(entregas_files)} arquivos de entregas.")
         
