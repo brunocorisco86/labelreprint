@@ -45,7 +45,7 @@ Se você adicionou novos templates ou precisa recalibrar as coordenadas onde os 
 
 1.  **Gere as Grades de Alinhamento:**
     ```bash
-    PYTHONPATH=. venv/bin/python3 scripts/generate_all_grids.py
+    venv/bin/python3 scripts/generate_all_grids.py
     ```
     Isso gerará cópias dos PDFs de templates com uma grade de eixos milimetrada em [docs/grids/](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/docs/grids).
 2.  **Mapeie Coordenadas:** Abra o PDF correspondente em um visualizador. O canto superior esquerdo é o ponto **`(X=0, Y=0)`**. Leia os valores de `X` e `Y` onde o texto deve ser posicionado.
@@ -61,7 +61,7 @@ Para rodar todo o sistema do início ao fim (sincronizar templates, gerar grades
 
 ```bash
 # Executa a geração completa de todos os lotes e tipos
-PYTHONPATH=. venv/bin/python3 scripts/run_pipeline_ponta_a_ponta.py
+venv/bin/python3 scripts/run_pipeline_ponta_a_ponta.py
 ```
 
 #### 🔀 Opções de Execução Segmentada (Filtro por Tipo de Ração)
@@ -69,11 +69,11 @@ Caso necessite priorizar o lote de impressão física ou processar lotes separad
 
 *   **Apenas Rótulos GlobalGap (Exclusivos C.Vale):**
     ```bash
-    PYTHONPATH=. venv/bin/python3 scripts/run_pipeline_ponta_a_ponta.py --tipo GG
+    venv/bin/python3 scripts/run_pipeline_ponta_a_ponta.py --tipo GG
     ```
 *   **Apenas Rótulos Comuns (Terceiros e C.Vale não-GG):**
     ```bash
-    PYTHONPATH=. venv/bin/python3 scripts/run_pipeline_ponta_a_ponta.py --tipo CM
+    venv/bin/python3 scripts/run_pipeline_ponta_a_ponta.py --tipo CM
     ```
 
 #### O que o script mestre realiza automaticamente:
