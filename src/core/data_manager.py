@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import glob
+import re
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -19,10 +20,20 @@ class DataManager:
     gerar as features necessárias para a impressão dos rótulos e salvar tudo no banco de dados SQLite.
     """
 
-    def __init__(self, db_path=None):
+    def __init__(self, db_path=None, raw_dir=None):
         self.db_path = db_path or DATABASE_PATH
         # Garante que a pasta de destino exista
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+
+        # Define o diretório de dados brutos (prioriza data/raw, usa data/templates como fallback se não existir)
+        if raw_dir:
+            self.raw_dir = raw_dir
+        else:
+            default_raw_dir = os.path.join(PROJECT_ROOT, "data/raw")
+            if os.path.exists(default_raw_dir):
+                self.raw_dir = default_raw_dir
+            else:
+                self.raw_dir = os.path.join(PROJECT_ROOT, "data/templates")
 
     def get_connection(self):
         return sqlite3.connect(self.db_path)
@@ -98,9 +109,55 @@ class DataManager:
         print("[ETL] Iniciando carregamento dos dados brutos...")
         
         # 1. Carregar Regiões
-        regioes_file = os.path.join(PROJECT_ROOT, "data/raw/RegioesAtualizadas/regioes_atualizadas_30_04_26.csv")
+        regioes_dir = os.path.join(self.raw_dir, "RegioesAtualizadas")
+        csv_files = glob.glob(os.path.join(regioes_dir, "*.csv"))
+        
+        if not csv_files:
+            raise FileNotFoundError(f"Nenhum arquivo CSV de regiões encontrado em: {regioes_dir}")
+            
+        # Função para extrair data do nome do arquivo (ex: "regioes_atualizadas_30_04_26.csv" -> 30/04/26)
+        def get_file_date(filepath):
+            filename = os.path.basename(filepath)
+            # Busca padrões de data como DD.MM.YY ou DD_MM_YY no nome
+            match = re.search(r'(\d{2})[._](\d{2})[._](\d{2})', filename)
+            if match:
+                try:
+                    day, month, year = map(int, match.groups())
+                    full_year = 2000 + year if year < 100 else year
+                    return datetime(full_year, month, day)
+                except ValueError:
+                    pass
+            # Fallback para a data de modificação física do arquivo
+            return datetime.fromtimestamp(os.path.getmtime(filepath))
+            
+        # Seleciona o arquivo de regiões mais recente
+        regioes_file = max(csv_files, key=get_file_date)
         print(f"[ETL] Lendo Regiões de: {regioes_file}")
-        df_regioes = pd.read_csv(regioes_file)
+
+        # Detecta o separador dinamicamente (vírgula ou ponto-e-vírgula)
+        sep = ','
+        try:
+            with open(regioes_file, 'r', encoding='utf-8', errors='ignore') as f:
+                first_line = f.readline()
+                if ';' in first_line:
+                    sep = ';'
+        except Exception:
+            pass
+
+        df_regioes = pd.read_csv(regioes_file, sep=sep)
+
+        # Mapeia colunas caso seja o formato de exportação original do Excel (com acentos e espaços)
+        rename_map = {}
+        if 'n° dos aviários' in df_regioes.columns:
+            rename_map['n° dos aviários'] = 'Aviario'
+        if 'Final' in df_regioes.columns:
+            rename_map['Final'] = 'Extensionista'
+        elif 'Ext' in df_regioes.columns:
+            rename_map['Ext'] = 'Extensionista'
+            
+        if rename_map:
+            df_regioes = df_regioes.rename(columns=rename_map)
+
         # Limpar chave Aviario
         df_regioes['Aviario'] = pd.to_numeric(df_regioes['Aviario'], errors='coerce')
         df_regioes = df_regioes.dropna(subset=['Aviario'])
@@ -108,7 +165,7 @@ class DataManager:
         df_regioes['Extensionista'] = df_regioes['Extensionista'].fillna("Nao_Identificado").astype(str).str.strip()
         
         # 2. Carregar Filtro Lotes Ativos
-        filtro_file = os.path.join(PROJECT_ROOT, "data/raw/FiltroLotesAtivos/FiltroLotesAtivos.xlsx")
+        filtro_file = os.path.join(self.raw_dir, "FiltroLotesAtivos/FiltroLotesAtivos.xlsx")
         print(f"[ETL] Lendo Filtro de Lotes Ativos de: {filtro_file}")
         df_filtro = pd.read_excel(filtro_file)
         df_filtro['FazendaLote'] = df_filtro['Fazenda'].astype(str) + '-' + df_filtro['Lote'].astype(str)
@@ -118,7 +175,7 @@ class DataManager:
         df_filtro['LoteAbatido'] = df_filtro['LoteAbatido'].astype(int)
         
         # 3. Carregar Fazendas
-        fazendas_file = os.path.join(PROJECT_ROOT, "data/raw/ListagemGeralFazendas/ListagemGeralFazendas.xlsx")
+        fazendas_file = os.path.join(self.raw_dir, "ListagemGeralFazendas/ListagemGeralFazendas.xlsx")
         print(f"[ETL] Lendo Cadastro Geral de Fazendas de: {fazendas_file}")
         df_fazendas = pd.read_excel(fazendas_file)
         df_fazendas['Fazenda'] = pd.to_numeric(df_fazendas['Fazenda'], errors='coerce')
@@ -130,7 +187,7 @@ class DataManager:
         df_fazendas['Granja Global GAP'] = df_fazendas['Granja Global GAP'].isin(['VERDADEIRO', 'TRUE', '1', 'YES'])
         
         # 3. Carregar Entregas de Ração
-        entregas_pattern = os.path.join(PROJECT_ROOT, "data/raw/EntregasRacao/*.xlsx")
+        entregas_pattern = os.path.join(self.raw_dir, "EntregasRacao/*.xlsx")
         entregas_files = glob.glob(entregas_pattern)
         print(f"[ETL] Encontrados {len(entregas_files)} arquivos de entregas.")
         
