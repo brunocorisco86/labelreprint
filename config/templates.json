@@ -32,7 +32,7 @@
       "fields": {
         "data_fabricacao": {
           "x": 110,
-          "y":170,
+          "y": 170,
           "font_size": 10,
           "align": "left"
         },

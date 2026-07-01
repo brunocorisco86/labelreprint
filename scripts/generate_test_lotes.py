@@ -1,4 +1,11 @@
 import os
+import sys
+
+# Adiciona a raiz do projeto ao sys.path para permitir a importação de src e scripts
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+
 import sqlite3
 import random
 import json
