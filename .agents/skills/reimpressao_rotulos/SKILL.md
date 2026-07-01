@@ -1,0 +1,59 @@
+---
+name: reimpressao_rotulos
+description: Orientações de engenharia de software e regras de negócio para manutenção do sistema de Reimpressão de Rótulos da C.Vale.
+---
+
+# 🛠️ Skill de Reimpressão de Rótulos C.Vale
+
+Esta skill fornece diretrizes técnicas e operacionais para manutenção, depuração e expansão do sistema de geração retroativa de rótulos de ração.
+
+## 📐 Arquitetura da Solução
+
+O sistema baseia-se em um pipeline de ETL integrado que extrai transações de entrega, limpa redundâncias operacionais, e realiza a mesclagem física de dados dinâmicos sobre templates PDF originais:
+
+1.  **Camada de Dados**: SQLite (`data/processed/entregas_processadas.db`) e Pandas.
+2.  **Camada de PDF**: ReportLab para gerar o canvas overlay de texto e pypdf para mesclar com o PDF original do template.
+3.  **Mapeamento**:
+    *   [templates.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/templates.json): Coordenadas (X, Y) e alinhamentos de texto para cada arquivo de template físico.
+    *   [shelf_life.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/shelf_life.json): Shelf-life padrão por fabricante de ração.
+
+## 📏 Regras de Escrita e Coordenadas
+
+### Sistema de Eixo Y Invertido (Origem no Topo)
+*   **Origem (0, 0)**: Canto Superior Esquerdo da página (X=0 na esquerda, Y=0 no topo).
+*   **Tradução Interna**: O preenchedor realiza a conversão automática: `y_reportlab = altura_pagina - y_json`.
+
+### Alinhamento e Aspect Ratio
+*   **Orientação Nativa**: O preenchedor chama `page.transfer_rotation_to_content()` para reconfigurar páginas com rotação lógica (como `/Rotate 90`), tornando-as fisicamente em paisagem (`842x595`) com `/Rotate 0` no dicionário.
+
+### Lote Impresso
+*   **Lógica**: O campo `lote` impresso representa o **lote de fabricação da ração** (data de fabricação formatada como **`DDMMAA`**).
+    *   *Exemplo*: Se a ração possui data de fabricação `30/06/2026`, o lote impresso é **`300626`**.
+
+## 🚀 Como Executar e Validar
+
+### 1. Execução do Pipeline de Ponta a Ponta
+Para rodar todo o sistema do início ao fim (sincronizar templates, gerar grades, executar ETL/MER e gerar os PDFs consolidados de produção):
+```bash
+PYTHONPATH=. venv/bin/python3 scripts/run_pipeline_ponta_a_ponta.py
+```
+
+### 2. Geração Segmentada (Filtro por Tipo de Ração)
+*   **Priorizar GlobalGap (Exclusivos C.Vale):**
+    ```bash
+    PYTHONPATH=. venv/bin/python3 scripts/run_pipeline_ponta_a_ponta.py --tipo GG
+    ```
+*   **Apenas Comuns (Terceiros e C.Vale não-GG):**
+    ```bash
+    PYTHONPATH=. venv/bin/python3 scripts/run_pipeline_ponta_a_ponta.py --tipo CM
+    ```
+
+### 3. Geração Física de Amostragem de Teste (20 Lotes)
+```bash
+rm -rf Export/*/ && PYTHONPATH=. venv/bin/python3 scripts/generate_test_lotes.py
+```
+
+### 4. Execução da Suíte de Testes
+```bash
+venv/bin/pytest tests/test_aviario_lote_generation.py -v -s
+```

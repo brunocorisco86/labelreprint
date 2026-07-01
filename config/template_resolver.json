@@ -1,0 +1,32 @@
+{
+  "resolver_rules": {
+    "terceiros_crescimento_comum": {
+      "AGRIFIRM": "AGRIFIRM_4_CRESCIMENTO_CM.pdf",
+      "COPACOL": "COPACOL_4_CRESCIMENTO_CM.pdf",
+      "LAR": "LAR_4_CRESCIMENTO_CM.pdf",
+      "COAMO": "CVALE_4_CRESCIMENTO_CM.pdf"
+    },
+    "fallback_cvale": {
+      "1_PREINICIAL": {
+        "CM": "CVALE_1_PREINICIAL_CM.pdf",
+        "GG": "CVALE_1_PREINICIAL_GG.pdf"
+      },
+      "2_INICIAL1": {
+        "CM": "CVALE_2_INICIAL1_CM.pdf",
+        "GG": "CVALE_2_INICIAL1_GG.pdf"
+      },
+      "3_INICIAL2": {
+        "CM": "CVALE_3_INICIAL2_CM.pdf",
+        "GG": "CVALE_3_INICIAL2_GG.pdf"
+      },
+      "4_CRESCIMENTO": {
+        "CM": "CVALE_4_CRESCIMENTO_CM.pdf",
+        "GG": "CVALE_4_CRESCIMENTO_GG.pdf"
+      },
+      "5_ABATE": {
+        "CM": "CVALE_5_ABATE_CM.pdf",
+        "GG": "CVALE_5_ABATE_GG.pdf"
+      }
+    }
+  }
+}

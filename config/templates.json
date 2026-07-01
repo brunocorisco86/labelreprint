@@ -1,0 +1,329 @@
+{
+  "templates": {
+    "AGRIFIRM_4_CRESCIMENTO_CM.pdf": {
+      "fornecedor": "AGRIFIRM",
+      "fase": "4_CRESCIMENTO",
+      "tipo_racao": "CM",
+      "fields": {
+        "data_fabricacao": {
+          "x": 700,
+          "y": 415,
+          "font_size": 10,
+          "align": "left"
+        },
+        "lote": {
+          "x": 700,
+          "y": 450,
+          "font_size": 10,
+          "align": "left"
+        },
+        "data_validade": {
+          "x": 700,
+          "y": 430,
+          "font_size": 10,
+          "align": "left"
+        }
+      }
+    },
+    "COPACOL_4_CRESCIMENTO_CM.pdf": {
+      "fornecedor": "COPACOL",
+      "fase": "4_CRESCIMENTO",
+      "tipo_racao": "CM",
+      "fields": {
+        "data_fabricacao": {
+          "x": 110,
+          "y":170,
+          "font_size": 10,
+          "align": "left"
+        },
+        "lote": {
+          "x": 50,
+          "y": 160,
+          "font_size": 10,
+          "align": "left"
+        },
+        "data_validade": {
+          "x": 110,
+          "y": 180,
+          "font_size": 10,
+          "align": "left"
+        }
+      }
+    },
+    "CVALE_1_PREINICIAL_CM.pdf": {
+      "fornecedor": "CVALE",
+      "fase": "1_PREINICIAL",
+      "tipo_racao": "CM",
+      "fields": {
+        "data_fabricacao": {
+          "x": 650,
+          "y": 520,
+          "font_size": 10,
+          "align": "center"
+        },
+        "lote": {
+          "x": 550,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        },
+        "data_validade": {
+          "x": 650,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        }
+      }
+    },
+    "CVALE_1_PREINICIAL_GG.pdf": {
+      "fornecedor": "CVALE",
+      "fase": "1_PREINICIAL",
+      "tipo_racao": "GG",
+      "fields": {
+        "data_fabricacao": {
+          "x": 650,
+          "y": 520,
+          "font_size": 10,
+          "align": "center"
+        },
+        "lote": {
+          "x": 550,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        },
+        "data_validade": {
+          "x": 650,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        }
+      }
+    },
+    "CVALE_2_INICIAL1_CM.pdf": {
+      "fornecedor": "CVALE",
+      "fase": "2_INICIAL1",
+      "tipo_racao": "CM",
+      "fields": {
+        "data_fabricacao": {
+          "x": 650,
+          "y": 520,
+          "font_size": 10,
+          "align": "center"
+        },
+        "lote": {
+          "x": 550,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        },
+        "data_validade": {
+          "x": 650,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        }
+      }
+    },
+    "CVALE_2_INICIAL1_GG.pdf": {
+      "fornecedor": "CVALE",
+      "fase": "2_INICIAL1",
+      "tipo_racao": "GG",
+      "fields": {
+        "data_fabricacao": {
+          "x": 650,
+          "y": 520,
+          "font_size": 10,
+          "align": "center"
+        },
+        "lote": {
+          "x": 550,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        },
+        "data_validade": {
+          "x": 650,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        }
+      }
+    },
+    "CVALE_3_INICIAL2_CM.pdf": {
+      "fornecedor": "CVALE",
+      "fase": "3_INICIAL2",
+      "tipo_racao": "CM",
+      "fields": {
+        "data_fabricacao": {
+          "x": 650,
+          "y": 520,
+          "font_size": 10,
+          "align": "center"
+        },
+        "lote": {
+          "x": 550,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        },
+        "data_validade": {
+          "x": 650,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        }
+      }
+    },
+    "CVALE_3_INICIAL2_GG.pdf": {
+      "fornecedor": "CVALE",
+      "fase": "3_INICIAL2",
+      "tipo_racao": "GG",
+      "fields": {
+        "data_fabricacao": {
+          "x": 650,
+          "y": 520,
+          "font_size": 10,
+          "align": "center"
+        },
+        "lote": {
+          "x": 550,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        },
+        "data_validade": {
+          "x": 650,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        }
+      }
+    },
+    "CVALE_4_CRESCIMENTO_CM.pdf": {
+      "fornecedor": "CVALE",
+      "fase": "4_CRESCIMENTO",
+      "tipo_racao": "CM",
+      "fields": {
+        "data_fabricacao": {
+          "x": 650,
+          "y": 520,
+          "font_size": 10,
+          "align": "center"
+        },
+        "lote": {
+          "x": 550,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        },
+        "data_validade": {
+          "x": 650,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        }
+      }
+    },
+    "CVALE_4_CRESCIMENTO_GG.pdf": {
+      "fornecedor": "CVALE",
+      "fase": "4_CRESCIMENTO",
+      "tipo_racao": "GG",
+      "fields": {
+        "data_fabricacao": {
+          "x": 650,
+          "y": 520,
+          "font_size": 10,
+          "align": "center"
+        },
+        "lote": {
+          "x": 550,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        },
+        "data_validade": {
+          "x": 650,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        }
+      }
+    },
+    "CVALE_5_ABATE_CM.pdf": {
+      "fornecedor": "CVALE",
+      "fase": "5_ABATE",
+      "tipo_racao": "CM",
+      "fields": {
+        "data_fabricacao": {
+          "x": 650,
+          "y": 520,
+          "font_size": 10,
+          "align": "center"
+        },
+        "lote": {
+          "x": 550,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        },
+        "data_validade": {
+          "x": 650,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        }
+      }
+    },
+    "CVALE_5_ABATE_GG.pdf": {
+      "fornecedor": "CVALE",
+      "fase": "5_ABATE",
+      "tipo_racao": "GG",
+      "fields": {
+        "data_fabricacao": {
+          "x": 650,
+          "y": 520,
+          "font_size": 10,
+          "align": "center"
+        },
+        "lote": {
+          "x": 550,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        },
+        "data_validade": {
+          "x": 650,
+          "y": 565,
+          "font_size": 10,
+          "align": "center"
+        }
+      }
+    },
+    "LAR_4_CRESCIMENTO_CM.pdf": {
+      "fornecedor": "LAR",
+      "fase": "4_CRESCIMENTO",
+      "tipo_racao": "CM",
+      "fields": {
+        "data_fabricacao": {
+          "x": 113,
+          "y": 495,
+          "font_size": 8,
+          "align": "left"
+        },
+        "lote": {
+          "x": 175,
+          "y": 495,
+          "font_size": 8,
+          "align": "left"
+        },
+        "data_validade": {
+          "x": 415,
+          "y": 495,
+          "font_size": 10,
+          "align": "left"
+        }
+      }
+    }
+  }
+}

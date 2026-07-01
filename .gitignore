@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDEs
+.idea/
+.vscode/
+
+# Local configuration
+.env
+
+# Data raw files (contém dados proprietários e confidenciais de entregas reais)
+data/raw/
+
+# Data processed SQLite (contém a base SQLite gerada a partir dos dados reais)
+data/processed/
+
+# Pasta de Logs de execução
+logs/
+*.log
+
+# Pasta de Exportação de PDFs gerados em produção
+Export/
+docs/grids/*.pdf
