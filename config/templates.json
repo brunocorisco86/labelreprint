@@ -31,19 +31,19 @@
       "tipo_racao": "CM",
       "fields": {
         "data_fabricacao": {
-          "x": 125,
+          "x": 100,
           "y": 610,
           "font_size": 10,
           "align": "left"
         },
         "lote": {
-          "x": 125,
+          "x": 100,
           "y": 580,
           "font_size": 10,
           "align": "left"
         },
         "data_validade": {
-          "x": 125,
+          "x": 100,
           "y": 640,
           "font_size": 10,
           "align": "left"
