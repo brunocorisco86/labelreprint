@@ -16,11 +16,13 @@ Ao analisar, enriquecer ou gerar relatórios a partir de dados de transações d
   1. **Recolha de Sobra de Ração**: Se a ração em questão for uma ração do tipo **Abate** (usada no final do lote do aviário), classifique/interprete o registro como recolha padrão de sobra de ração pós-abate.
   2. **Possível Anomalia / Problema de Processo**: Se a ração em questão for de **outro tipo (diferente de Abate)**, trate-a como uma anomalia (possível erro operacional ou de carregamento) e gere um alerta apropriado na lógica de negócios ou nos logs de processamento.
 
-### Desduplicação e Omissão de Emissão de Rótulos no ETL
+### Desduplicação, Normalização e Omissão de Emissão de Rótulos no ETL
 Para evitar a poluição de múltiplos PDFs idênticos nos diretórios de exportação e distorções no consumo de rações do lote:
-1. **Desduplicação de Registros 100% Repetidos**: No início do ETL, são removidas linhas idênticas duplicadas operacionalmente no banco (mesmo `FazendaLote`, `Data`, `HoraTransacao`, `NumCarga`, `QuantidadeEntregue`, `CodigoTransacao`, `NomeFormula`).
-2. **Omissão por Duplicidade Diária**: Se houver mais de uma entrega da mesma ração no mesmo dia para o mesmo lote, apenas a primeira entrega cronológica gera rótulo (as demais são omitidas).
-3. **Omissão por Retorno/Devolução Integral**: Se uma carga (`NumCarga`) foi totalmente devolvida para a fábrica (quantidade líquida total da carga menor ou igual a zero), a emissão do rótulo para ela é totalmente omitida.
+1. **Normalização de FazendaLote**: Códigos compostos de lote são normalizados para remover zeros à esquerda do número do lote (ex: `1342-05` é normalizado para `1342-5`) em todas as tabelas e planilhas, garantindo a consistência das chaves de junção.
+2. **Desduplicação de Registros 100% Repetidos**: No início do ETL, são removidas linhas idênticas duplicadas operacionalmente no banco (mesmo `FazendaLote`, `Data`, `HoraTransacao`, `NumCarga`, `QuantidadeEntregue`, `CodigoTransacao`, `NomeFormula`).
+3. **Filtro de Cargas Fora de Ordem (Sobras do Lote Anterior)**: Qualquer entrega de ração cuja fase seja cronologicamente posterior a uma fase entregue em data subsequente no mesmo lote (ex: `5_ABATE` ou `3_INICIAL2` antes de `1_PREINICIAL`) é classificada como fora de ordem (sobra de lote anterior) e descartada no ETL.
+4. **Omissão por Duplicidade Diária**: Se houver mais de uma entrega da mesma ração no mesmo dia para o mesmo lote, apenas a primeira entrega cronológica gera rótulo (as demais são omitidas).
+5. **Omissão por Retorno/Devolução Integral**: Se uma carga (`NumCarga`) foi totalmente devolvida para a fábrica (quantidade líquida total da carga menor ou igual a zero), a emissão do rótulo para ela é totalmente omitida.
 Essas cargas inativas recebem `id_rotulo = NULL` no SQLite, mas são preservadas para os balanços dos sumários financeiros (`sumario_entregas.txt`).
 
 ### Lote de Ração Impresso

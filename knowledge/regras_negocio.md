@@ -28,20 +28,21 @@ Quando os seguintes campos apresentarem o padrão abaixo:
 
 ---
 
-## 🔄 Detecção e Filtragem de Sobra de Ração do Lote Anterior (ETL)
+## 🔄 Detecção e Filtragem de Cargas de Ração Fora de Ordem / Sobras do Lote Anterior (ETL)
 
-Nos dados históricos, observa-se que em alguns aviários-lotes (`FazendaLote`), a primeira entrega registrada cronologicamente é de **Ração Abate (fase 5)**, o que contradiz o fluxo natural de nutrição (que deveria iniciar com a Ração Pré-Inicial - fase 1). 
+Nos dados históricos, observa-se que em alguns aviários-lotes (`FazendaLote`), as primeiras entregas registradas cronologicamente podem conter **fases tardias** de ração (como `3_INICIAL2` ou `5_ABATE`), o que contradiz o fluxo natural de nutrição (que deveria iniciar com a `1_PREINICIAL` e progredir em ordem crescente). 
 
-Essa ocorrência representa a **sobra de ração do lote anterior** que foi creditada ou lançada de forma retroativa com o lote atual por questões operacionais.
+Essas ocorrências representam as **sobras de ração do lote anterior** que foram creditadas ou lançadas de forma tardia/retroativa sob o lote atual por motivos operacionais e logísticos.
 
-### Regra de Tratamento (Algoritmo de Filtragem):
-Para identificar e filtrar essas sobras no pipeline de ETL, a seguinte lógica de consistência é aplicada:
-1. **Primeira Entrega**: Identifica a primeira entrega cronológica de cada lote (`FazendaLote`).
-2. **Fase Abate**: Verifica se a fase de ração dessa primeira entrega é **`5_ABATE`**.
-3. **Existência de Ciclo de Crescimento**: Verifica se há alguma entrega subsequente no mesmo lote cuja fase de ração seja anterior à de abate (`1_PREINICIAL`, `2_INICIAL1`, `3_INICIAL2`, `4_CRESCIMENTO`).
-4. **Filtro Aplicado**: Se as condições 1, 2 e 3 forem atendidas, essa primeira entrega de abate é descartada e o sequencial das entregas restantes do lote é reordenado (o próximo registro legítimo passa a ser a entrega ordinal `01`).
-   
-*Nota: Se o lote contiver apenas entregas de ração abate (comum em lotes capturados apenas em sua fase final na janela de histórico), a entrega é mantida como legítima de final de ciclo e **não** é descartada.*
+### Regra de Tratamento (Algoritmo de Filtragem Generalizado):
+Para identificar e filtrar essas cargas fora de ordem no pipeline de ETL, a seguinte lógica de consistência é aplicada:
+1. **Mapeamento de Ordem das Fases**: As fases de ração legítimas são mapeadas em ordinais crescentes de `1_PREINICIAL` (1) a `5_ABATE` (5).
+2. **Identificação de Menor Fase Subsequente**: Para cada entrega do lote, identifica-se qual a menor fase legítima entregue cronologicamente em qualquer momento posterior no mesmo lote.
+3. **Filtro de Inversão**: Se a menor fase subsequente for estritamente menor do que a fase da entrega atual (e maior que 0, para ignorar fases não catalogadas), a entrega atual é marcada como fora de ordem (sobra) e descartada do pipeline.
+   * *Exemplo*: Se um lote inicia com cargas de `3_INICIAL2` ou `5_ABATE` e, em seguida, recebe cargas de `1_PREINICIAL`, as cargas iniciais de fases tardias são filtradas e removidas.
+4. **Reordenação**: O sequencial de entregas restantes do lote é reordenado para que o primeiro registro legítimo inicie a partir do sequencial `01`.
+
+*Nota: Se o lote contiver apenas entregas de ração tardias (como apenas cargas de abate na janela histórica), elas são mantidas como legítimas de final de ciclo e **não** são descartadas.*
 
 ---
 

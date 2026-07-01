@@ -4,6 +4,13 @@ Este arquivo registra o histórico cronológico de todas as modificações, melh
 
 ---
 
+## [1.5.1] - 2026-07-01
+### Corrigido
+*   **Normalização de FazendaLote:** Adicionado tratamento no ETL para unificar códigos de lotes zootécnicos (removendo zeros à esquerda nos lotes, ex: `1342-05` $\rightarrow$ `1342-5`). Corrige bug em que o aviário `1342` e outros lotes de dígito único eram omitidos silenciosamente por incompatibilidade de chaves na junção com o arquivo `FiltroMissaoEuropa`.
+
+### Alterado
+*   **Filtragem de Cargas de Ração Fora de Ordem:** Generalizada a regra zootécnica de consistência cronológica. Agora, qualquer entrega de fase de ração tardia ocorrendo antes de uma fase inicial no mesmo lote (ex: `3_INICIAL2` ou `5_ABATE` entregues antes de `1_PREINICIAL`) é detectada como sobra do ciclo anterior e descartada pelo ETL (antes a lógica cobria apenas o caso de Abate como a primeira entrega absoluta).
+
 ## [1.5.0] - 2026-07-01
 ### Adicionado
 *   **Pipeline Orquestrador Mestre (`run_pipeline_ponta_a_ponta.py`):** Criado script centralizado para execução sequencial de todas as fases (Sincronização -> Geração de Grades -> ETL/MER -> Geração de Produção).

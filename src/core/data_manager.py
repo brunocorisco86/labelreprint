@@ -38,6 +38,22 @@ class DataManager:
     def get_connection(self):
         return sqlite3.connect(self.db_path)
 
+    def normalize_fazenda_lote(self, fazenda_lote):
+        """Normaliza a string FazendaLote para remover zeros à esquerda do lote e garantir formato padrão {fazenda}-{lote} (ex: '1342-05' -> '1342-5')"""
+        if pd.isna(fazenda_lote):
+            return None
+        
+        fazenda_lote_str = str(fazenda_lote).strip()
+        if '-' in fazenda_lote_str:
+            parts = fazenda_lote_str.split('-')
+            try:
+                fazenda_part = int(float(parts[0].strip()))
+                lote_part = int(float(parts[-1].strip()))
+                return f"{fazenda_part}-{lote_part}"
+            except ValueError:
+                return fazenda_lote_str
+        return fazenda_lote_str
+
     def extract_lote(self, fazenda_lote):
         """Extrai o lote ordinal da string FazendaLote (ex: '1351-1' -> '01')"""
         if pd.isna(fazenda_lote):
@@ -168,11 +184,19 @@ class DataManager:
         filtro_file = os.path.join(self.raw_dir, "FiltroLotesAtivos/FiltroLotesAtivos.xlsx")
         print(f"[ETL] Lendo Filtro de Lotes Ativos de: {filtro_file}")
         df_filtro = pd.read_excel(filtro_file)
-        df_filtro['FazendaLote'] = df_filtro['Fazenda'].astype(str) + '-' + df_filtro['Lote'].astype(str)
+        df_filtro['FazendaLote'] = (df_filtro['Fazenda'].astype(str) + '-' + df_filtro['Lote'].astype(str)).apply(self.normalize_fazenda_lote)
         # Formatar campos temporais e booleanos no filtro
         df_filtro['DataAlojamento'] = pd.to_datetime(df_filtro['DataAlojamento']).dt.strftime('%Y-%m-%d')
         df_filtro['DataAbate'] = pd.to_datetime(df_filtro['DataAbate']).dt.strftime('%Y-%m-%d')
         df_filtro['LoteAbatido'] = df_filtro['LoteAbatido'].astype(int)
+
+        # 2.1. Carregar Filtro Missão Europa (Auditoria)
+        europa_file = os.path.join(self.raw_dir, "FiltroMissaoEuropa/FiltroMissaoEuropa.xlsx")
+        print(f"[ETL] Lendo Filtro Missão Europa de: {europa_file}")
+        df_europa = pd.read_excel(europa_file)
+        df_europa['FazendaLote'] = (df_europa['Aviário'].astype(str) + '-' + df_europa['Lote'].astype(str)).apply(self.normalize_fazenda_lote)
+        if 'Dia do Aloj' in df_europa.columns:
+            df_europa['Dia do Aloj'] = pd.to_datetime(df_europa['Dia do Aloj']).dt.strftime('%Y-%m-%d')
         
         # 3. Carregar Fazendas
         fazendas_file = os.path.join(self.raw_dir, "ListagemGeralFazendas/ListagemGeralFazendas.xlsx")
@@ -205,6 +229,10 @@ class DataManager:
             dfs_entregas.append(df_temp)
             
         df_entregas = pd.concat(dfs_entregas, ignore_index=True)
+        
+        # Normalizar FazendaLote para remover diferenças de formatação/padding
+        if 'FazendaLote' in df_entregas.columns:
+            df_entregas['FazendaLote'] = df_entregas['FazendaLote'].apply(self.normalize_fazenda_lote)
         
         # Limpar registros sujos ou totalizadores (Fazenda deve ser numérica)
         df_entregas['Fazenda'] = pd.to_numeric(df_entregas['Fazenda'], errors='coerce')
@@ -257,12 +285,12 @@ class DataManager:
         # Extrair Lote
         df_entregas['Lote'] = df_entregas['FazendaLote'].apply(self.extract_lote)
         
-        # Filtrar apenas entregas que constem na planilha FiltroLotesAtivos (trazendo ativos, fechados e abatidos)
-        lotes_filtro = df_filtro['FazendaLote'].tolist()
+        # Filtrar apenas entregas que constem na planilha FiltroMissaoEuropa (auditoria)
+        lotes_europa = df_europa['FazendaLote'].tolist()
         antes_filtro_lotes = len(df_entregas)
-        df_entregas = df_entregas[df_entregas['FazendaLote'].isin(lotes_filtro)].reset_index(drop=True)
+        df_entregas = df_entregas[df_entregas['FazendaLote'].isin(lotes_europa)].reset_index(drop=True)
         depois_filtro_lotes = len(df_entregas)
-        print(f"[ETL] Filtradas {antes_filtro_lotes - depois_filtro_lotes} entregas que não constam no FiltroLotesAtivos. Mantidas {depois_filtro_lotes} entregas.")
+        print(f"[ETL] Filtradas {antes_filtro_lotes - depois_filtro_lotes} entregas que não constam no FiltroMissaoEuropa. Mantidas {depois_filtro_lotes} entregas.")
         
         # Extrair Fase Ração
         df_entregas['FaseRacao'] = df_entregas['NomeFormula'].apply(self.extract_fase_racao)
@@ -279,32 +307,43 @@ class DataManager:
             axis=1
         )
         
-        # Filtrar anomalias de sobra de lote anterior:
-        # Quando a primeira entrega cronológica de um aviário-lote (FazendaLote) é da fase 5_ABATE,
-        # e o lote possui entregas subsequentes de fases anteriores (1_PREINICIAL, 2_INICIAL1, 3_INICIAL2, 4_CRESCIMENTO),
-        # essa primeira entrega é considerada sobra do lote anterior e deve ser descartada.
+        # Filtrar anomalias de sobra de lote anterior (cargas fora de ordem):
+        # Quando cargas de fases tardias (como 3_INICIAL2 ou 5_ABATE) ocorrem antes de cargas de fases iniciais (como 1_PREINICIAL)
+        # no mesmo lote, elas são consideradas sobras do ciclo/lote anterior lançadas tardiamente e devem ser descartadas.
         df_entregas = df_entregas.sort_values(by=['FazendaLote', 'Data', 'HoraTransacao']).reset_index(drop=True)
-        df_entregas['temp_entrega_num'] = df_entregas.groupby('FazendaLote').cumcount() + 1
         
-        df_first_phase = df_entregas[df_entregas['temp_entrega_num'] == 1][['FazendaLote', 'FaseRacao']].rename(columns={'FaseRacao': 'temp_primeira_fase'})
-        df_entregas = df_entregas.merge(df_first_phase, on='FazendaLote', how='left')
+        # Mapeamento ordinal para avaliar a ordem cronológica correta das fases
+        fase_ordinais = {
+            '1_PREINICIAL': 1,
+            '2_INICIAL1': 2,
+            '3_INICIAL2': 3,
+            '4_CRESCIMENTO': 4,
+            '5_ABATE': 5
+        }
+        df_entregas['temp_fase_ord'] = df_entregas['FaseRacao'].map(fase_ordinais).fillna(0).astype(int)
         
-        df_entregas['temp_tem_fase_anterior'] = df_entregas['FaseRacao'].isin(['1_PREINICIAL', '2_INICIAL1', '3_INICIAL2', '4_CRESCIMENTO'])
-        lotes_com_fase_anterior = df_entregas.groupby('FazendaLote')['temp_tem_fase_anterior'].any().reset_index().rename(columns={'temp_tem_fase_anterior': 'temp_lote_tem_fase_anterior'})
-        df_entregas = df_entregas.merge(lotes_com_fase_anterior, on='FazendaLote', how='left')
+        # Identifica para cada entrega qual a menor fase legítima que ocorre subsequentemente no mesmo lote.
+        # Usamos cummin de trás para frente (invertendo o DataFrame) e shiftando 1 linha.
+        df_entregas['temp_min_subsequente'] = (
+            df_entregas.iloc[::-1]
+            .groupby('FazendaLote')['temp_fase_ord']
+            .transform(lambda x: x.cummin().shift(1).fillna(99))
+            .iloc[::-1]
+        )
         
+        # Se a menor fase subsequente for menor que a fase da entrega atual (e maior que zero para ignorar fases desconhecidas),
+        # significa que a entrega atual está fora de ordem (fase mais velha vindo antes de fase mais nova).
         condicao_sobra_anterior = (
-            (df_entregas['temp_entrega_num'] == 1) & 
-            (df_entregas['FaseRacao'] == '5_ABATE') & 
-            (df_entregas['temp_lote_tem_fase_anterior'] == True)
+            (df_entregas['temp_min_subsequente'] > 0) &
+            (df_entregas['temp_min_subsequente'] < df_entregas['temp_fase_ord'])
         )
         
         antes_filtro = len(df_entregas)
         df_entregas = df_entregas[~condicao_sobra_anterior].reset_index(drop=True)
         depois_filtro = len(df_entregas)
-        print(f"[ETL] Filtradas {antes_filtro - depois_filtro} ocorrências de sobras de ração abate do lote anterior.")
+        print(f"[ETL] Filtradas {antes_filtro - depois_filtro} ocorrências de cargas de ração fora de ordem (sobras do lote anterior).")
         
-        df_entregas = df_entregas.drop(columns=['temp_entrega_num', 'temp_primeira_fase', 'temp_tem_fase_anterior', 'temp_lote_tem_fase_anterior'])
+        df_entregas = df_entregas.drop(columns=['temp_fase_ord', 'temp_min_subsequente'])
 
         # Inicializa GeraRotulo como True para entregas normais e False para devoluções/saídas
         df_entregas['GeraRotulo'] = df_entregas['QuantidadeEntregue'] > 0
@@ -375,6 +414,10 @@ class DataManager:
             # Salvar tabela dimensão de FiltroLotesAtivos
             df_filtro.to_sql("FiltroLotesAtivos", conn, if_exists="replace", index=False)
             print("[ETL] Tabela FiltroLotesAtivos salva com sucesso no SQLite.")
+            
+            # Salvar tabela dimensão de FiltroMissaoEuropa
+            df_europa.to_sql("FiltroMissaoEuropa", conn, if_exists="replace", index=False)
+            print("[ETL] Tabela FiltroMissaoEuropa salva com sucesso no SQLite.")
             
             print("[ETL] ETL executado com sucesso e tabelas criadas no banco de dados!")
         finally:

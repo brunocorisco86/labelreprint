@@ -16,6 +16,9 @@ O sistema baseia-se em um pipeline de ETL integrado que extrai transações de e
 3.  **Mapeamento**:
     *   [templates.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/templates.json): Coordenadas (X, Y) e alinhamentos de texto para cada arquivo de template físico.
     *   [shelf_life.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/shelf_life.json): Shelf-life padrão por fabricante de ração.
+4.  **Regras de ETL e Consistência**:
+    *   **Normalização de Lote composto**: `FazendaLote` é normalizado para o formato `{fazenda}-{lote}` sem zeros à esquerda (ex: `1342-5`), garantindo correspondência exata entre planilhas operacionais e de auditoria.
+    *   **Filtragem de Inversões de Fase (Sobras)**: Cargas entregues com fase tardia antes de fases mais jovens no mesmo lote (ex: `3_INICIAL2` ou `5_ABATE` antes de `1_PREINICIAL`) são filtradas e descartadas como sobras do lote anterior.
 
 ## 📏 Regras de Escrita e Coordenadas
 

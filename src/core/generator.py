@@ -144,30 +144,43 @@ class BatchGenerator:
             df_index.to_csv(index_path, index=False, encoding="utf-8")
             print(f"[Generator] Arquivo de índice consolidado gerado com sucesso em: {index_path}")
             
-        # 4. Gera o arquivo sumario_entregas.txt e mescla os PDFs em cada pasta de lote
+        # 4. Gera o arquivo sumario_entregas.txt e mescla os PDFs em cada pasta de lote, agrupados por Extensionista em ordem alfabética
         if not df_entregas.empty:
-            print("[Generator] Iniciando geração dos sumários e mesclagem de PDFs por lote...")
-            for fazenda_lote, group in df_entregas.groupby("FazendaLote"):
-                first_row = group.iloc[0]
-                ext_folder = sanitize_folder_name(first_row['Extensionista'])
-                tipo_folder = "GlobalGap" if first_row['TipoRacao'] == "GG" else "Comum"
-                fazenda_folder = sanitize_folder_name(first_row['NomeFazenda'])
-                lote_composto_folder = sanitize_folder_name(first_row['FazendaLote'])
+            print("[Generator] Iniciando geração dos sumários e mesclagem de PDFs por lote (ordenado por Extensionista)...")
+            
+            # Agrupa por Extensionista e ordena as chaves (nomes dos extensionistas)
+            grouped_by_ext = df_entregas.groupby("Extensionista")
+            sorted_extensionistas = sorted(grouped_by_ext.groups.keys(), key=lambda x: str(x).upper())
+            
+            for extensionista in sorted_extensionistas:
+                df_ext = grouped_by_ext.get_group(extensionista)
+                print(f"\n[Extensionista] Iniciando processamento dos lotes de: {extensionista}")
                 
-                target_dir = os.path.join(self.export_dir, ext_folder, tipo_folder, fazenda_folder, lote_composto_folder)
-                
-                # Se o diretório foi criado (porque geramos PDFs para ele), cria o sumário e faz a mesclagem
-                if os.path.exists(target_dir):
-                    sumario_path = os.path.join(target_dir, "sumario_entregas.txt")
-                    try:
-                        self._write_sumario(group, sumario_path)
-                    except Exception as e:
-                        print(f"  [Erro] Falha ao gerar sumário para o lote {fazenda_lote}: {e}")
-                        
-                    try:
-                        self._merge_pdfs_lote(group, target_dir)
-                    except Exception as e:
-                        print(f"  [Erro] Falha ao mesclar PDFs para o lote {fazenda_lote}: {e}")
+                # Agrupa os lotes do extensionista
+                for fazenda_lote, group in df_ext.groupby("FazendaLote"):
+                    first_row = group.iloc[0]
+                    ext_folder = sanitize_folder_name(first_row['Extensionista'])
+                    tipo_folder = "GlobalGap" if first_row['TipoRacao'] == "GG" else "Comum"
+                    fazenda_folder = sanitize_folder_name(first_row['NomeFazenda'])
+                    lote_composto_folder = sanitize_folder_name(first_row['FazendaLote'])
+                    
+                    target_dir = os.path.join(self.export_dir, ext_folder, tipo_folder, fazenda_folder, lote_composto_folder)
+                    
+                    # Se o diretório foi criado (porque geramos PDFs para ele), cria o sumário e faz a mesclagem
+                    if os.path.exists(target_dir):
+                        sumario_path = os.path.join(target_dir, "sumario_entregas.txt")
+                        try:
+                            self._write_sumario(group, sumario_path)
+                        except Exception as e:
+                            print(f"  [Erro] Falha ao gerar sumário para o lote {fazenda_lote}: {e}")
+                            
+                        try:
+                            self._merge_pdfs_lote(group, target_dir)
+                            print(f"✔️ [Status] Lote {fazenda_lote} do Extensionista {extensionista} concluído e pronto para impressão.")
+                        except Exception as e:
+                            print(f"  [Erro] Falha ao mesclar PDFs para o lote {fazenda_lote}: {e}")
+                            
+                print(f"✨ [Concluído] Todos os lotes do Extensionista {extensionista} foram gerados e mesclados!")
             
         print(f"[Generator] Fim da execução. Sucesso: {success_count} | Erros: {error_count}")
         return success_count, error_count

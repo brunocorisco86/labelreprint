@@ -68,9 +68,28 @@ erDiagram
         INTEGER LoteAbatido "Status se o lote foi abatido (0/1)"
     }
 
+    FiltroMissaoEuropa {
+        TEXT FazendaLote PK "Código composto do AviarioLote (ex: 1298-20)"
+        INTEGER Aviario "Código do aviário"
+        INTEGER Lote "Número do lote"
+        TEXT DiaAlojamento "Data do alojamento"
+        TEXT NomeAviario "Nome do aviário"
+        INTEGER Idade "Idade das aves na data de referência"
+        TEXT Cidade "Cidade do aviário"
+        INTEGER Nucleo "Número do núcleo"
+        TEXT Extensionista "Nome do extensionista"
+        TEXT MedVetCvale "Médico Veterinário da C.Vale"
+        TEXT FiscalVetAdapar "Fiscal Veterinário da Adapar"
+        INTEGER NumAviarios "Número de aviários na propriedade"
+        TEXT GlobalSLP "Flag Global SLP"
+        INTEGER CabAlojadas "Cabeças de aves alojadas"
+        TEXT Coordenadas "Latitude e Longitude do lote"
+    }
+
     EntregasRacao }o--|| Fazendas : "Fazenda = Fazenda"
     EntregasRacao }o--|| Regioes : "Fazenda = Aviario"
     EntregasRacao }o--|| FiltroLotesAtivos : "FazendaLote = FazendaLote"
+    EntregasRacao }o--|| FiltroMissaoEuropa : "FazendaLote = FazendaLote"
 ```
 
 ---
@@ -148,3 +167,25 @@ Contém a listagem dos lotes com seus respectivos status e datas de controle, se
 | `DataAlojamento` | TEXT | Data de alojamento em formato ISO (`YYYY-MM-DD`). |
 | `DataAbate` | TEXT | Data de abate em formato ISO (`YYYY-MM-DD`), ou `NULL` caso ativo. |
 | `LoteAbatido` | INTEGER | Flag booleano indicando se o lote foi abatido (1 = Verdadeiro, 0 = Falso). |
+
+### 5. Tabela Dimensão: `FiltroMissaoEuropa`
+Tabela com os lotes selecionados para a auditoria de exportação para a Europa. Restringe a geração final de rótulos.
+
+| Campo | Tipo no SQLite | Descrição |
+| :--- | :--- | :--- |
+| `FazendaLote` | TEXT (PK) | Chave primária. Código composto do lote (`{Aviário}-{Lote}`). |
+| `Aviário` | INTEGER | Código do aviário (fazenda). |
+| `Lote` | INTEGER | Número do lote. |
+| `Dia do Aloj` | TEXT | Data do alojamento em formato ISO (`YYYY-MM-DD`). |
+| `Nome Aviário` | TEXT | Nome operacional do aviário/produtor. |
+| `Idade (06/07)` | INTEGER | Idade das aves na data de referência da auditoria. |
+| `Cidade` | TEXT | Cidade de localização. |
+| `Núcleo` | INTEGER | Código do núcleo. |
+| `Extensionista` | TEXT | Extensionista responsável. |
+| `Méd. Veterinário C.Vale` | TEXT | Médico veterinário da C.Vale. |
+| `Fiscal Veterinário Adapar` | TEXT | Fiscal veterinário da Adapar. |
+| `Número aviários` | INTEGER | Total de aviários na fazenda. |
+| `Global SLP` | TEXT | Status Global SLP. |
+| `Cab. Alojadas` | INTEGER | Quantidade de cabeças de aves alojadas. |
+| `Coordenadas` | TEXT | Geolocalização (Latitude e Longitude). |
+| `Link` | TEXT | Link do mapa de localização. |
