@@ -7,7 +7,7 @@
 # Caminhos absolutos
 APP_DIR="/home/bruno/labelreprint"
 LOG_FILE="$APP_DIR/logs/watchdog.log"
-PORT=5000
+PORT=5001
 URL="http://127.0.0.1:$PORT/"
 
 mkdir -p "$(dirname "$LOG_FILE")"
