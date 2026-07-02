@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C.Vale - Impressão de Rótulos de Ração</title>
+    <!-- Importa a fonte Inter do Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --primary: #06b6d4;
+            --primary-hover: #0891b2;
+            --primary-glow: rgba(6, 182, 212, 0.35);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.25);
+            --danger: #ef4444;
+            --terminal-bg: rgba(15, 23, 42, 0.95);
+            --terminal-green: #34d399;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-x: hidden;
+        }
+
+        /* Container Principal */
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Cabeçalho */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        .logo-area {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #22d3ee, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.025em;
+        }
+
+        .logo-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .badge-localhost {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* Layout Grid */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Painel Central (Glassmorphism) */
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        /* Sistema de Abas */
+        .tabs {
+            display: flex;
+            gap: 0.4rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            outline: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 1.25rem;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Formulários */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        select, input[type="date"], input[type="email"] {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        select:focus, input[type="date"]:focus, input[type="email"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        select:disabled {
+            background: rgba(15, 23, 42, 0.3);
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
+        /* Switch Customizado */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.3);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .switch-label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .switch-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .switch-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #475569;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Campo de Validade Customizada Oculto */
+        .custom-validity-wrapper {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .custom-validity-wrapper.visible {
+            max-height: 120px;
+            opacity: 1;
+        }
+
+        .info-box {
+            background: rgba(30, 41, 59, 0.5);
+            border-left: 3px solid var(--primary);
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .info-box strong {
+            color: var(--text-primary);
+        }
+
+        /* Botão */
+        .btn-submit {
+            background: var(--primary);
+            color: #0f172a;
+            border: none;
+            padding: 0.875rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px var(--primary-glow);
+            width: 100%;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px var(--primary-glow);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            background: #475569;
+            color: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Loader */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(15, 23, 42, 0.3);
+            border-top: 2px solid #0f172a;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Resultado */
+        .result-panel {
+            border: 1px dashed rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--success);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .result-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            background: rgba(15, 23, 42, 0.3);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .result-key {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .result-val {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .btn-download {
+            background: var(--success);
+            color: #0f172a;
+            border: none;
+            padding: 0.75rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px var(--success-glow);
+            transition: all 0.2s ease;
+        }
+
+        .btn-download:hover {
+            background: #059669;
+            box-shadow: 0 6px 16px var(--success-glow);
+            transform: translateY(-1px);
+        }
+
+        /* Terminal de Logs / Sumários */
+        .terminal-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 650px;
+        }
+
+        .terminal-header {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            padding: 0.6rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 0.35rem;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #f59e0b; }
+        .dot-green { background: #10b981; }
+
+        .terminal-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-refresh {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .btn-refresh:hover {
+            color: var(--text-primary);
+        }
+
+        .terminal-body {
+            background: var(--terminal-bg);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            flex-grow: 1;
+            padding: 1.25rem;
+            overflow-y: auto;
+            max-height: 720px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.45;
+            color: var(--terminal-green);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        /* Estilização da Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Rodapé */
+        footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem;
+            margin-top: 3rem;
+            background: rgba(15, 23, 42, 0.4);
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Cabeçalho -->
+        <header>
+            <div class="logo-area">
+                <img src="/static/images/logo_cvale.jpeg" alt="C.Vale Logo" style="height: 50px; width: 50px; border-radius: 8px; border: 1.5px solid var(--border-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);">
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <span class="logo-title">C.Vale</span>
+                    <span class="logo-subtitle">Impressão de Rótulos de Ração</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span class="badge-localhost">Localhost Server</span>
+            </div>
+        </header>
+
+        <!-- Layout em Grid -->
+        <div class="grid-layout">
+            <!-- Painel Esquerdo: Controle (Abas + Formulário) -->
+            <div class="panel">
+                <!-- Abas de Navegação -->
+                <div class="tabs">
+                    <button class="tab-btn active" id="tab-avulso-btn" onclick="switchTab('avulso')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        Emissão Avulsa
+                    </button>
+                    <button class="tab-btn" id="tab-nucleo-btn" onclick="switchTab('nucleo')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                        Geração Núcleo
+                    </button>
+                    <button class="tab-btn" id="tab-sumario-btn" onclick="switchTab('sumario')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        Consulta Lotes
+                    </button>
+                </div>
+                
+                <!-- Alerta de Erro Genérico -->
+                <div class="alert-error" id="error-alert">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span id="error-message">Mensagem de erro.</span>
+                </div>
+
+                <!-- Conteúdo Aba 1: Emissão Avulsa -->
+                <div id="tab-content-avulso" class="tab-content active">
+                    <form id="label-form" onsubmit="generateLabel(event)">
+                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            
+                            <!-- Ração Selector -->
+                            <div class="form-group">
+                                <label for="template-select">Tipo de Ração / Template PDF</label>
+                                <select id="template-select" required onchange="onTemplateChange()">
+                                    <option value="" disabled selected>Selecione uma ração...</option>
+                                </select>
+                            </div>
+
+                            <!-- Data de Fabricação -->
+                            <div class="form-group">
+                                <label for="fab-date">Data de Fabricação</label>
+                                <input type="date" id="fab-date" required onchange="calculateDates()">
+                            </div>
+
+                            <!-- Switch de Customização da Validade -->
+                            <div class="switch-container">
+                                <div class="switch-label">
+                                    <span class="switch-title">Personalizar Data de Validade?</span>
+                                    <span class="switch-subtitle">Altera a validade calculada pelo fabricante</span>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="custom-validity-toggle" onchange="toggleCustomValidity()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <!-- Input Oculto de Validade Customizada -->
+                            <div class="custom-validity-wrapper" id="custom-validity-wrapper">
+                                <div class="form-group">
+                                    <label for="val-date">Nova Data de Validade</label>
+                                    <input type="date" id="val-date" onchange="calculateDates()">
+                                </div>
+                            </div>
+
+                            <!-- Box de Preview das Datas -->
+                            <div class="info-box" id="preview-box">
+                                Selecione a ração e insira a data de fabricação para ver o resumo de datas.
+                            </div>
+
+                            <!-- Botão Gerar -->
+                            <button type="submit" class="btn-submit" id="btn-submit" disabled>
+                                <span class="spinner" id="btn-spinner"></span>
+                                <span id="btn-text">Gerar Rótulo PDF</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Resultado de Sucesso Avulso -->
+                    <div class="result-panel" id="result-panel">
+                        <div class="result-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Rótulo Gerado com Sucesso!
+                        </div>
+                        
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <span class="result-key">Fornecedor</span>
+                                <span class="result-val" id="res-forn">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-key">Fase da Ração</span>
+                                <span class="result-val" id="res-fase">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-key">Tipo de Ração</span>
+                                <span class="result-val" id="res-tipo">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-key">Lote Impresso</span>
+                                <span class="result-val" id="res-lote" style="color: var(--primary); font-family: 'JetBrains Mono', monospace;">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-key">Fabricação</span>
+                                <span class="result-val" id="res-fab">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-key">Validade</span>
+                                <span class="result-val" id="res-val">-</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+                            <!-- Botão de Download -->
+                            <a href="#" class="btn-download" id="download-link" download>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Baixar Rótulo PDF
+                            </a>
+                            
+                            <!-- Seção de Envio por E-mail -->
+                            <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <label for="email-select" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Enviar por E-mail</label>
+                                
+                                <!-- Dropdown de destinatários -->
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <select id="email-select" onchange="onEmailSelectChange()" style="padding: 0.6rem 0.75rem; font-size: 0.9rem; background: rgba(15, 23, 42, 0.4); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; outline: none;">
+                                        <option value="" disabled selected>Carregando destinatários...</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Entrada de email customizado (exibida apenas quando 'custom' for selecionado) -->
+                                <div id="email-custom-group" style="display: none; flex-direction: column; gap: 0.5rem; margin-top: 0.15rem;">
+                                    <input type="email" id="email-input" placeholder="destinatario@cvale.com.br" style="padding: 0.6rem 0.75rem; font-size: 0.9rem; background: rgba(15, 23, 42, 0.4); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; outline: none;">
+                                </div>
+
+                                <button type="button" class="btn-submit" id="btn-email-submit" onclick="sendLabelEmail()" style="margin-top: 0.25rem; padding: 0.75rem 1.2rem; font-size: 0.875rem; background: #475569; color: var(--text-primary); box-shadow: none;">
+                                    <span class="spinner" id="email-spinner" style="width: 14px; height: 14px; border-width: 1.5px; margin-right: 0;"></span>
+                                    <span id="email-btn-text">Enviar E-mail</span>
+                                </button>
+                                <div id="email-feedback" style="font-size: 0.8rem; font-weight: 500; display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conteúdo Aba 2: Geração por Núcleo -->
+                <div id="tab-content-nucleo" class="tab-content">
+                    <form id="nucleo-form" onsubmit="generateNucleoLabels(event)">
+                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            
+                            <!-- Núcleo Selector -->
+                            <div class="form-group">
+                                <label for="nucleo-select">Selecione o Núcleo de Criação</label>
+                                <select id="nucleo-select" required onchange="onNucleoChange()">
+                                    <option value="" disabled selected>Selecione o núcleo...</option>
+                                </select>
+                            </div>
+
+                            <!-- Preview e Detalhes dos Lotes vinculados -->
+                            <div class="info-box" id="nucleo-preview-box" style="display: none;">
+                                Carregando detalhes do núcleo...
+                            </div>
+
+                            <!-- Botão Gerar em Lote -->
+                            <button type="submit" class="btn-submit" id="btn-submit-nucleo" disabled>
+                                <span class="spinner" id="btn-spinner-nucleo"></span>
+                                <span id="btn-text-nucleo">Gerar Rótulos do Núcleo</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Resultado de Sucesso do Núcleo -->
+                    <div class="result-panel" id="result-panel-nucleo">
+                        <div class="result-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Geração de Lote Finalizada!
+                        </div>
+                        <div style="font-size: 0.9rem; line-height: 1.5;" id="result-message-nucleo">
+                            Rótulos gerados com sucesso.
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.25rem;">
+                            Os PDFs unificados consolidados e os relatórios financeiros de sumários foram gravados no diretório do respectivo extensionista dentro da pasta <strong>Export/</strong>.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conteúdo Aba 3: Consulta de Sumários -->
+                <div id="tab-content-sumario" class="tab-content">
+                    <form id="sumario-form" onsubmit="event.preventDefault()">
+                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            
+                            <!-- Produtor Selector -->
+                            <div class="form-group">
+                                <label for="produtor-select">Selecione o Produtor / Aviário</label>
+                                <select id="produtor-select" required onchange="onProdutorChange()">
+                                    <option value="" disabled selected>Carregando produtores...</option>
+                                </select>
+                            </div>
+
+                            <!-- Lote Selector -->
+                            <div class="form-group">
+                                <label for="lote-select">Selecione o Lote Composto</label>
+                                <select id="lote-select" required onchange="onLoteChange()" disabled>
+                                    <option value="" disabled selected>Aguardando produtor...</option>
+                                </select>
+                            </div>
+                            
+                            <div class="info-box" id="sumario-status-info">
+                                Escolha o produtor e o lote composto para visualizar o relatório de sumário de entregas no console lateral.
+                            </div>
+
+                            <!-- Seção de Ações do Sumário (Oculta por padrão, exibe ao carregar sumário) -->
+                            <div id="sumario-actions" style="display: none; border-top: 1px solid var(--border-color); padding-top: 1.25rem; flex-direction: column; gap: 1rem;">
+                                <label style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Ações do Sumário</label>
+                                
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <!-- Botão Copiar para Clipboard -->
+                                    <button type="button" class="btn-submit" id="btn-copy-sumario" onclick="copySumarioToClipboard()" style="flex: 1; padding: 0.75rem 1rem; font-size: 0.85rem; background: var(--primary); color: #0f172a; box-shadow: none;">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        Copiar Sumário
+                                    </button>
+                                    <!-- Botão Compartilhar WhatsApp -->
+                                    <button type="button" class="btn-submit" id="btn-whatsapp-sumario" onclick="shareSumarioWhatsApp()" style="flex: 1; padding: 0.75rem 1rem; font-size: 0.85rem; background: #25d366; color: #ffffff; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25); border: none;">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                        Enviar WhatsApp
+                                    </button>
+                                </div>
+
+                                <!-- Seção de Envio por E-mail do Sumário -->
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.25rem; border-top: 1px dashed var(--border-color); padding-top: 0.75rem;">
+                                    <label for="email-select-sumario" style="font-size: 0.75rem; color: var(--text-secondary);">Enviar Sumário por E-mail</label>
+                                    <select id="email-select-sumario" onchange="onEmailSelectSumarioChange()" style="padding: 0.6rem 0.75rem; font-size: 0.875rem; background: rgba(15, 23, 42, 0.4); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; outline: none;">
+                                        <option value="" disabled selected>Carregando destinatários...</option>
+                                    </select>
+                                    
+                                    <div id="email-custom-group-sumario" style="display: none; flex-direction: column; gap: 0.5rem; margin-top: 0.15rem;">
+                                        <input type="email" id="email-input-sumario" placeholder="destinatario@cvale.com.br" style="padding: 0.6rem 0.75rem; font-size: 0.875rem; background: rgba(15, 23, 42, 0.4); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; outline: none;">
+                                    </div>
+
+                                    <button type="button" class="btn-submit" id="btn-email-sumario-submit" onclick="sendSumarioEmail()" style="margin-top: 0.25rem; padding: 0.65rem 1rem; font-size: 0.85rem; background: #475569; color: var(--text-primary); box-shadow: none;">
+                                        <span class="spinner" id="email-sumario-spinner" style="width: 14px; height: 14px; border-width: 1.5px; margin-right: 0;"></span>
+                                        <span id="email-sumario-btn-text">Enviar E-mail</span>
+                                    </button>
+                                    <div id="email-sumario-feedback" style="font-size: 0.8rem; font-weight: 500; display: none; margin-top: 0.25rem;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Painel Direito: Console de Logs de Auditoria / Sumário Lote -->
+            <div class="terminal-panel">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <div class="dot dot-red"></div>
+                        <div class="dot dot-yellow"></div>
+                        <div class="dot dot-green"></div>
+                    </div>
+                    <span class="terminal-title" id="terminal-title">AUDITORIA INCREMENTAL (geracao_manual.log)</span>
+                    <button class="btn-refresh" id="btn-refresh" onclick="fetchLogs()" title="Atualizar Logs">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    </button>
+                </div>
+                <div class="terminal-body" id="terminal-body">
+                    Carregando logs de auditoria...
+                </div>
+            </div>
+        </div>
+
+        <!-- Rodapé -->
+        <footer>
+            C.Vale Cooperativa Agroindustrial &bull; Impressão de Rótulos de Ração &bull; Desenvolvido Localmente
+        </footer>
+    </div>
+
+    <!-- Lógica em JavaScript -->
+    <script>
+        let templates = [];
+        let nucleosList = [];
+        let currentNucleoLotes = [];
+        let savedEmails = [];
+        let currentTab = 'avulso';
+        
+        let lastGeneratedFile = null;
+        let lastGeneratedSummary = null;
+        let lastLoadedSumarioText = "";
+        
+        let shelfLifeConfigs = {
+            "CVALE": 60,
+            "COPACOL": 90,
+            "AGRIFIRM": 180,
+            "COAMO": 60,
+            "LAR": 180
+        };
+
+        const asciiArt = `
+      _/_/_/    _/_/_/      _/_/    _/      _/  _/_/_/_/
+   _/        _/        _/    _/  _/_/  _/_/  _/       
+  _/        _/        _/    _/  _/  _/  _/  _/_/_/    
+ _/        _/        _/    _/  _/      _/  _/         
+  _/_/_/    _/_/_/      _/_/    _/      _/  _/_/_/_/  
+ 
+                  S I L O S  &  L O T E S
+ 
+                      /\\
+                     /  \\
+                    /____\\
+                   |      |
+                   |C.VALE|
+                   | RAÇÃO|
+                   |______|
+                    \\    /
+                     \\  /
+                      \\/
+ 
+      =========================================
+       PORTAL DE RÓTULOS DE RAÇÃO C.VALE
+      =========================================
+ 
+       Aguardando seleção de Produtor e Lote...
+       Selecione-os na aba "Consulta Lotes"
+       para renderizar as entregas.
+`;
+
+        // Executar ao carregar a página
+        window.addEventListener('DOMContentLoaded', () => {
+            // Define data padrão de fabricação como hoje
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fab-date').value = today;
+            
+            fetchTemplates();
+            fetchNucleos();
+            fetchEmails();
+            fetchProdutores();
+            fetchLogs();
+            
+            // Atualiza logs automaticamente a cada 7 segundos se estivermos na aba de logs
+            setInterval(() => {
+                if (currentTab === 'avulso' || currentTab === 'nucleo') {
+                    fetchLogs();
+                }
+            }, 7000);
+        });
+
+        // Alterna entre abas (tabs)
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Remove classes ativas
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            hideError();
+            
+            // Ativa elementos
+            if (tabName === 'avulso') {
+                document.getElementById('tab-avulso-btn').classList.add('active');
+                document.getElementById('tab-content-avulso').classList.add('active');
+                
+                // Restaura Terminal para Logs
+                document.getElementById('terminal-title').textContent = 'AUDITORIA INCREMENTAL (geracao_manual.log)';
+                document.getElementById('btn-refresh').style.display = 'flex';
+                fetchLogs();
+            } else if (tabName === 'nucleo') {
+                document.getElementById('tab-nucleo-btn').classList.add('active');
+                document.getElementById('tab-content-nucleo').classList.add('active');
+                
+                // Restaura Terminal para Logs
+                document.getElementById('terminal-title').textContent = 'AUDITORIA INCREMENTAL (geracao_manual.log)';
+                document.getElementById('btn-refresh').style.display = 'flex';
+                fetchLogs();
+            } else if (tabName === 'sumario') {
+                document.getElementById('tab-sumario-btn').classList.add('active');
+                document.getElementById('tab-content-sumario').classList.add('active');
+                
+                // Altera Terminal para Sumário do Lote
+                document.getElementById('terminal-title').textContent = 'SUMÁRIO DO LOTE';
+                document.getElementById('btn-refresh').style.display = 'none';
+                
+                // Exibe Sumário ou ASCII Art
+                const loteSelect = document.getElementById('lote-select');
+                if (loteSelect && loteSelect.value) {
+                    fetchSumario(loteSelect.value);
+                } else {
+                    renderAsciiArt();
+                }
+            }
+        }
+
+        // Renderiza a ASCII art de espera
+        function renderAsciiArt() {
+            const termBody = document.getElementById('terminal-body');
+            termBody.innerHTML = '';
+            
+            const pre = document.createElement('pre');
+            pre.style.margin = '0';
+            pre.style.whiteSpace = 'pre';
+            pre.style.fontFamily = "'JetBrains Mono', monospace";
+            pre.style.lineHeight = '1.3';
+            pre.style.color = 'var(--terminal-green)';
+            pre.textContent = asciiArt;
+            
+            termBody.appendChild(pre);
+        }
+
+        // Carrega os templates a partir do Backend
+        async function fetchTemplates() {
+            try {
+                const res = await fetch('/api/templates');
+                const data = await res.json();
+                
+                templates = data;
+                const select = document.getElementById('template-select');
+                select.innerHTML = '<option value="" disabled selected>Selecione uma ração...</option>';
+                
+                data.forEach(t => {
+                    const tipoLabel = t.tipo_racao === 'CM' ? 'Comum' : 'GlobalGap';
+                    const option = document.createElement('option');
+                    option.value = t.pdf;
+                    option.textContent = `${t.fornecedor} - ${t.fase} (${tipoLabel})`;
+                    select.appendChild(option);
+                });
+                
+                document.getElementById('btn-submit').removeAttribute('disabled');
+            } catch (err) {
+                showError("Erro ao buscar templates de ração.");
+            }
+        }
+
+        // Carrega os núcleos a partir do Backend
+        async function fetchNucleos() {
+            try {
+                const res = await fetch('/api/nucleos');
+                const data = await res.json();
+                
+                nucleosList = data;
+                const select = document.getElementById('nucleo-select');
+                select.innerHTML = '<option value="" disabled selected>Selecione o núcleo...</option>';
+                
+                data.forEach(n => {
+                    const option = document.createElement('option');
+                    option.value = n;
+                    option.textContent = `Núcleo ${n}`;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error("Erro ao buscar núcleos:", err);
+            }
+        }
+
+        // Carrega a lista de produtores/granjas
+        async function fetchProdutores() {
+            try {
+                const res = await fetch('/api/produtores');
+                const data = await res.json();
+                
+                const select = document.getElementById('produtor-select');
+                select.innerHTML = '<option value="" disabled selected>Selecione o produtor...</option>';
+                
+                data.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p;
+                    option.textContent = p;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error("Erro ao buscar lista de produtores:", err);
+            }
+        }
+
+        // Carrega lotes do produtor selecionado
+        async function onProdutorChange() {
+            const produtor = document.getElementById('produtor-select').value;
+            const loteSelect = document.getElementById('lote-select');
+            
+            loteSelect.innerHTML = '<option value="" disabled selected>Carregando lotes composto...</option>';
+            loteSelect.setAttribute('disabled', 'true');
+            
+            // Restaura ASCII Art, oculta ações e limpa status box
+            renderAsciiArt();
+            document.getElementById('sumario-actions').style.display = 'none';
+            lastLoadedSumarioText = "";
+            document.getElementById('sumario-status-info').innerHTML = "Escolha o produtor e o lote composto para visualizar o relatório de sumário de entregas no console lateral.";
+            
+            try {
+                const res = await fetch(`/api/produtores/lotes?produtor=${encodeURIComponent(produtor)}`);
+                const data = await res.json();
+                
+                loteSelect.innerHTML = '<option value="" disabled selected>Selecione o lote composto...</option>';
+                data.forEach(l => {
+                    const option = document.createElement('option');
+                    option.value = l;
+                    option.textContent = `Lote ${l}`;
+                    loteSelect.appendChild(option);
+                });
+                
+                loteSelect.removeAttribute('disabled');
+            } catch (err) {
+                console.error("Erro ao carregar lotes do produtor:", err);
+            }
+        }
+
+        // Aciona ao selecionar um lote
+        function onLoteChange() {
+            const lote = document.getElementById('lote-select').value;
+            if (!lote) return;
+            fetchSumario(lote);
+        }
+
+        // Carrega e formata o sumário do lote no console
+        async function fetchSumario(lote) {
+            const termBody = document.getElementById('terminal-body');
+            termBody.innerHTML = '<div>[SISTEMA] Solicitando arquivo sumario_entregas.txt...</div>';
+            
+            try {
+                const res = await fetch(`/api/sumario?lote=${encodeURIComponent(lote)}`);
+                const data = await res.json();
+                
+                termBody.innerHTML = '';
+                
+                const pre = document.createElement('pre');
+                pre.style.margin = '0';
+                pre.style.whiteSpace = 'pre-wrap';
+                pre.style.fontFamily = "'JetBrains Mono', monospace";
+                pre.style.lineHeight = '1.45';
+                pre.style.color = '#38bdf8'; // Azul claro neon estilizado para o sumário de entregas
+                pre.textContent = data.text || data.error;
+                
+                termBody.appendChild(pre);
+                
+                // Trata as ações do sumário: exibe apenas se o sumário foi localizado de fato
+                if (data.text && !data.text.includes("não foi localizado") && !data.text.includes("ainda não foi gerado") && !data.text.includes("Nenhuma entrega")) {
+                    lastLoadedSumarioText = data.text;
+                    document.getElementById('sumario-actions').style.display = 'flex';
+                } else {
+                    lastLoadedSumarioText = "";
+                    document.getElementById('sumario-actions').style.display = 'none';
+                }
+                
+                // Atualiza o status box informativo
+                document.getElementById('sumario-status-info').innerHTML = `
+                    Exibindo sumário zootécnico e financeiro do <strong>Lote ${lote}</strong> no terminal lateral.
+                `;
+            } catch (err) {
+                lastLoadedSumarioText = "";
+                document.getElementById('sumario-actions').style.display = 'none';
+                termBody.innerHTML = `<div style="color: var(--danger);">[ERRO] Falha de comunicação ao buscar sumário do lote composto: ${err}</div>`;
+            }
+        }
+
+        // Carrega os e-mails salvos no JSON a partir do Backend
+        async function fetchEmails() {
+            try {
+                const res = await fetch('/api/emails');
+                const data = await res.json();
+                
+                savedEmails = data;
+                
+                // Popula select do rótulo
+                const select = document.getElementById('email-select');
+                select.innerHTML = '<option value="" disabled selected>Selecione um destinatário...</option>';
+                
+                // Popula select do sumário
+                const selectSumario = document.getElementById('email-select-sumario');
+                selectSumario.innerHTML = '<option value="" disabled selected>Selecione um destinatário...</option>';
+                
+                data.forEach(email => {
+                    const option = document.createElement('option');
+                    option.value = email;
+                    option.textContent = email;
+                    select.appendChild(option);
+                    
+                    const optionSum = document.createElement('option');
+                    optionSum.value = email;
+                    optionSum.textContent = email;
+                    selectSumario.appendChild(optionSum);
+                });
+                
+                // Opção extra para digitação de outro e-mail
+                const optionCustom = document.createElement('option');
+                optionCustom.value = 'custom';
+                optionCustom.textContent = 'Outro e-mail...';
+                select.appendChild(optionCustom);
+                
+                const optionCustomSum = document.createElement('option');
+                optionCustomSum.value = 'custom';
+                optionCustomSum.textContent = 'Outro e-mail...';
+                selectSumario.appendChild(optionCustomSum);
+            } catch (err) {
+                console.error("Erro ao buscar e-mails persistidos:", err);
+            }
+        }
+
+        // Controla exibição do input customizado de e-mail
+        function onEmailSelectChange() {
+            const select = document.getElementById('email-select');
+            const customGroup = document.getElementById('email-custom-group');
+            const emailInput = document.getElementById('email-input');
+            
+            if (select.value === 'custom') {
+                customGroup.style.display = 'flex';
+                emailInput.setAttribute('required', 'true');
+                emailInput.focus();
+            } else {
+                customGroup.style.display = 'none';
+                emailInput.removeAttribute('required');
+                emailInput.value = '';
+            }
+            // Limpa o feedback anterior
+            document.getElementById('email-feedback').style.display = 'none';
+        }
+
+        // Carrega os logs a partir do Backend
+        async function fetchLogs() {
+            try {
+                const res = await fetch('/api/logs?lines=35');
+                const lines = await res.json();
+                
+                const termBody = document.getElementById('terminal-body');
+                if (lines.length === 0) {
+                    termBody.innerHTML = '<div>[SISTEMA] Nenhum log registrado até o momento.</div>';
+                    return;
+                }
+                
+                termBody.innerHTML = '';
+                lines.forEach(line => {
+                    const row = document.createElement('div');
+                    
+                    // Colore linhas de sucesso, info e erro
+                    if (line.includes('ERROR') || line.includes('Erro') || line.includes('Falha')) {
+                        row.style.color = '#f87171';
+                    } else if (line.includes('sucesso') || line.includes('✅') || line.includes('concluída') || line.includes('enviado')) {
+                        row.style.color = '#34d399';
+                    } else if (line.includes('Solicitada') || line.includes('geração') || line.includes('Solicitado')) {
+                        row.style.color = '#60a5fa';
+                    } else {
+                        row.style.color = '#94a3b8';
+                    }
+                    
+                    row.textContent = line;
+                    termBody.appendChild(row);
+                });
+            } catch (err) {
+                console.error("Erro ao atualizar logs:", err);
+            }
+        }
+
+        // Aciona ao selecionar núcleo
+        async function onNucleoChange() {
+            const select = document.getElementById('nucleo-select');
+            const nucleoId = select.value;
+            if (!nucleoId) return;
+            
+            const previewBox = document.getElementById('nucleo-preview-box');
+            previewBox.style.display = 'block';
+            previewBox.innerHTML = 'Carregando detalhes do núcleo...';
+            
+            const btnSubmit = document.getElementById('btn-submit-nucleo');
+            btnSubmit.setAttribute('disabled', 'true');
+            
+            try {
+                const res = await fetch(`/api/nucleos/${nucleoId}/lotes`);
+                const data = await res.json();
+                
+                currentNucleoLotes = data.lotes;
+                
+                let granjasHtml = data.lotes.map(l => `<li>Lote <strong>${l.lote_composto}</strong> (${l.nome_aviario})</li>`).join('');
+                
+                previewBox.innerHTML = `
+                    Núcleo Selecionado: <strong>${data.nucleo}</strong><br>
+                    Granjas/Lotes Encontrados: <strong>${data.total_lotes}</strong><br>
+                    Total Entregas no SQLite: <strong style="color: var(--primary);">${data.total_entregas} cargas</strong><br>
+                    <ul style="margin-left: 1.25rem; margin-top: 0.5rem; font-size: 0.8rem; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.25rem;">
+                        ${granjasHtml}
+                    </ul>
+                `;
+                
+                if (data.total_entregas > 0) {
+                    btnSubmit.removeAttribute('disabled');
+                    hideError();
+                } else {
+                    showError(`Nenhuma entrega de ração no SQLite para os lotes do Núcleo ${nucleoId}. Insira os dados brutos e processe o ETL.`);
+                }
+            } catch (err) {
+                showError("Erro ao buscar detalhes dos lotes do núcleo.");
+            }
+        }
+
+        // Gera os rótulos consolidados para o núcleo
+        async function generateNucleoLabels(event) {
+            event.preventDefault();
+            
+            const select = document.getElementById('nucleo-select');
+            const nucleo = select.value;
+            if (!nucleo) return;
+            
+            const btnSubmit = document.getElementById('btn-submit-nucleo');
+            const btnSpinner = document.getElementById('btn-spinner-nucleo');
+            const btnText = document.getElementById('btn-text-nucleo');
+            const resPanel = document.getElementById('result-panel-nucleo');
+            
+            btnSubmit.setAttribute('disabled', 'true');
+            btnSpinner.style.display = 'inline-block';
+            btnText.textContent = 'Processando Lote...';
+            resPanel.style.display = 'none';
+            hideError();
+            
+            try {
+                const response = await fetch('/api/nucleos/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nucleo: parseInt(nucleo) })
+                });
+                
+                const resData = await response.json();
+                
+                if (resData.success) {
+                    document.getElementById('result-message-nucleo').innerHTML = `
+                        Processamento finalizado com sucesso!<br>
+                        <strong>${resData.sucesso_count} rótulos de cargas</strong> foram gerados e mesclados em arquivos unificados por lote zootécnico.<br>
+                        Erros operacionais: <strong>${resData.erros_count}</strong>.
+                    `;
+                    resPanel.style.display = 'flex';
+                    fetchLogs();
+                } else {
+                    showError(resData.error || "Erro durante a geração em lote.");
+                }
+            } catch (err) {
+                showError("Erro de rede ao solicitar geração de núcleo.");
+            } finally {
+                btnSubmit.removeAttribute('disabled');
+                btnSpinner.style.display = 'none';
+                btnText.textContent = 'Gerar Rótulos do Núcleo';
+            }
+        }
+
+        // Aciona quando muda o template no formulário avulso
+        function onTemplateChange() {
+            const select = document.getElementById('template-select');
+            const pdf = select.value;
+            const template = templates.find(t => t.pdf === pdf);
+            
+            if (!template) return;
+            
+            // Define o valor padrão no input de data de validade customizada
+            const defaultDays = shelfLifeConfigs[template.fornecedor] || 60;
+            const fabVal = document.getElementById('fab-date').value;
+            
+            if (fabVal) {
+                const fabDate = new Date(fabVal);
+                const valDate = new Date(fabDate);
+                valDate.setDate(valDate.getDate() + defaultDays + 1); // timezone offset correction
+                
+                document.getElementById('val-date').value = valDate.toISOString().split('T')[0];
+            }
+            
+            calculateDates();
+        }
+
+        // Toggle do Switch de Validade Customizada
+        function toggleCustomValidity() {
+            const toggle = document.getElementById('custom-validity-toggle');
+            const wrapper = document.getElementById('custom-validity-wrapper');
+            
+            if (toggle.checked) {
+                wrapper.classList.add('visible');
+                document.getElementById('val-date').setAttribute('required', 'true');
+            } else {
+                wrapper.classList.remove('visible');
+                document.getElementById('val-date').removeAttribute('required');
+            }
+            
+            calculateDates();
+        }
+
+        // Calcula e exibe as datas no painel de preview avulso
+        function calculateDates() {
+            const select = document.getElementById('template-select');
+            const pdf = select.value;
+            if (!pdf) return;
+            
+            const template = templates.find(t => t.pdf === pdf);
+            const fabVal = document.getElementById('fab-date').value;
+            if (!fabVal) return;
+            
+            const parts = fabVal.split('-');
+            const fabDate = new Date(parts[0], parts[1] - 1, parts[2]);
+            
+            const toggle = document.getElementById('custom-validity-toggle');
+            const isCustom = toggle.checked;
+            
+            let valDate;
+            let days;
+            
+            if (isCustom) {
+                const valVal = document.getElementById('val-date').value;
+                if (!valVal) return;
+                
+                const valParts = valVal.split('-');
+                valDate = new Date(valParts[0], valParts[1] - 1, valParts[2]);
+                
+                if (valDate < fabDate) {
+                    showError("A data de validade não pode ser anterior à data de fabricação.");
+                    document.getElementById('btn-submit').setAttribute('disabled', 'true');
+                    return;
+                } else {
+                    hideError();
+                    document.getElementById('btn-submit').removeAttribute('disabled');
+                }
+                
+                days = Math.round((valDate - fabDate) / (1000 * 60 * 60 * 24));
+            } else {
+                hideError();
+                document.getElementById('btn-submit').removeAttribute('disabled');
+                days = shelfLifeConfigs[template.fornecedor] || 60;
+                valDate = new Date(fabDate);
+                valDate.setDate(valDate.getDate() + days);
+            }
+            
+            const format = (d) => {
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${day}/${month}/${year}`;
+            };
+            
+            const day = String(fabDate.getDate()).padStart(2, '0');
+            const month = String(fabDate.getMonth() + 1).padStart(2, '0');
+            const yearStr = String(fabDate.getFullYear()).slice(-2);
+            const lote = `${day}${month}${yearStr}`;
+            
+            const previewBox = document.getElementById('preview-box');
+            previewBox.innerHTML = `
+                Lote Impresso: <strong style="color: var(--primary); font-family: 'JetBrains Mono', monospace;">${lote}</strong><br>
+                Fabricação: <strong>${format(fabDate)}</strong> &bull; 
+                Validade: <strong>${format(valDate)}</strong> (${days} dias ${isCustom ? 'personalizados' : 'padrão'})
+            `;
+        }
+
+        // Submete os dados para gerar o rótulo avulso
+        async function generateLabel(event) {
+            event.preventDefault();
+            
+            const select = document.getElementById('template-select');
+            const template_name = select.value;
+            const data_fabricacao = document.getElementById('fab-date').value;
+            
+            const toggle = document.getElementById('custom-validity-toggle');
+            const isCustom = toggle.checked;
+            const data_validade = isCustom ? document.getElementById('val-date').value : null;
+            
+            const btnSubmit = document.getElementById('btn-submit');
+            const btnSpinner = document.getElementById('btn-spinner');
+            const btnText = document.getElementById('btn-text');
+            const resPanel = document.getElementById('result-panel');
+            
+            // Oculta feedback de e-mail anterior se houver e limpa campos
+            document.getElementById('email-feedback').style.display = 'none';
+            document.getElementById('email-select').selectedIndex = 0;
+            document.getElementById('email-custom-group').style.display = 'none';
+            document.getElementById('email-input').value = '';
+            document.getElementById('email-input').removeAttribute('required');
+            
+            btnSubmit.setAttribute('disabled', 'true');
+            btnSpinner.style.display = 'inline-block';
+            btnText.textContent = 'Gerando...';
+            resPanel.style.display = 'none';
+            hideError();
+            
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        template_name,
+                        data_fabricacao,
+                        data_validade
+                    })
+                });
+                
+                const resData = await response.json();
+                
+                if (resData.success) {
+                    // Armazena cache do último rótulo gerado
+                    lastGeneratedFile = resData.filename;
+                    lastGeneratedSummary = resData.summary;
+                    
+                    document.getElementById('res-forn').textContent = resData.summary.fornecedor;
+                    document.getElementById('res-fase').textContent = resData.summary.fase;
+                    document.getElementById('res-tipo').textContent = resData.summary.tipo_racao;
+                    document.getElementById('res-lote').textContent = resData.summary.lote;
+                    document.getElementById('res-fab').textContent = resData.summary.data_fabricacao;
+                    document.getElementById('res-val').textContent = `${resData.summary.data_validade} (${resData.summary.validade_dias} dias)`;
+                    
+                    const dlLink = document.getElementById('download-link');
+                    dlLink.href = resData.download_url;
+                    dlLink.setAttribute('download', resData.filename);
+                    
+                    resPanel.style.display = 'flex';
+                    fetchLogs();
+                } else {
+                    showError(resData.error || "Erro durante a geração.");
+                }
+            } catch (err) {
+                showError("Erro de comunicação com o servidor.");
+            } finally {
+                btnSubmit.removeAttribute('disabled');
+                btnSpinner.style.display = 'none';
+                btnText.textContent = 'Gerar Rótulo PDF';
+            }
+        }
+
+        // Envia o rótulo gerado por e-mail
+        async function sendLabelEmail() {
+            const emailSelect = document.getElementById('email-select');
+            let toEmail = "";
+            
+            if (emailSelect.value === 'custom') {
+                const emailInput = document.getElementById('email-input');
+                toEmail = emailInput.value.trim();
+            } else {
+                toEmail = emailSelect.value;
+            }
+            
+            if (!toEmail) {
+                showEmailFeedback("Selecione um destinatário ou insira um e-mail válido.", "error");
+                return;
+            }
+            
+            // Expressão regular simples para validar formato de e-mail
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(toEmail)) {
+                showEmailFeedback("Formato de e-mail inválido.", "error");
+                return;
+            }
+            
+            if (!lastGeneratedFile || !lastGeneratedSummary) {
+                showEmailFeedback("Nenhum rótulo foi gerado nesta sessão para envio.", "error");
+                return;
+            }
+            
+            const btn = document.getElementById('btn-email-submit');
+            const spinner = document.getElementById('email-spinner');
+            const btnText = document.getElementById('email-btn-text');
+            
+            btn.setAttribute('disabled', 'true');
+            spinner.style.display = 'inline-block';
+            btnText.textContent = '';
+            showEmailFeedback("Enviando e-mail...", "info");
+            
+            try {
+                const response = await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: toEmail,
+                        filename: lastGeneratedFile,
+                        summary: lastGeneratedSummary
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showEmailFeedback("E-mail enviado com sucesso!", "success");
+                    
+                    // Se enviou para um e-mail customizado, atualiza a lista de e-mails imediatamente!
+                    if (emailSelect.value === 'custom') {
+                        await fetchEmails();
+                        // Pré-seleciona o e-mail recém-cadastrado no select
+                        document.getElementById('email-select').value = toEmail;
+                        document.getElementById('email-custom-group').style.display = 'none';
+                        document.getElementById('email-input').value = '';
+                        document.getElementById('email-input').removeAttribute('required');
+                    }
+                    
+                    fetchLogs();
+                } else {
+                    showEmailFeedback(data.error || "Falha no envio de e-mail.", "error");
+                }
+            } catch (err) {
+                showEmailFeedback("Erro de conexão ao enviar e-mail.", "error");
+            } finally {
+                btn.removeAttribute('disabled');
+                spinner.style.display = 'none';
+                btnText.textContent = 'Enviar E-mail';
+            }
+        }
+
+        // Exibe feedback da operação de e-mail
+        function showEmailFeedback(msg, type) {
+            const feedback = document.getElementById('email-feedback');
+            feedback.style.display = 'block';
+            feedback.textContent = msg;
+            
+            if (type === 'error') {
+                feedback.style.color = '#f87171';
+            } else if (type === 'success') {
+                feedback.style.color = '#34d399';
+            } else {
+                feedback.style.color = '#60a5fa';
+            }
+        }
+
+        function showError(msg) {
+            const alert = document.getElementById('error-alert');
+            const msgSpan = document.getElementById('error-message');
+            msgSpan.textContent = msg;
+            alert.style.display = 'flex';
+        }
+
+        function hideError() {
+            document.getElementById('error-alert').style.display = 'none';
+        }
+
+        // --- NOVAS FUNÇÕES PARA AÇÕES DO SUMÁRIO ---
+
+        async function copySumarioToClipboard() {
+            if (!lastLoadedSumarioText) return;
+            try {
+                await navigator.clipboard.writeText(lastLoadedSumarioText);
+                const btn = document.getElementById('btn-copy-sumario');
+                const originalContent = btn.innerHTML;
+                
+                btn.innerHTML = `
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Copiado!
+                `;
+                btn.style.background = 'var(--success)';
+                btn.style.color = '#0f172a';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.style.background = 'var(--primary)';
+                }, 2000);
+            } catch (err) {
+                console.error("Erro ao copiar para a área de transferência:", err);
+            }
+        }
+
+        function parseSumarioToWhatsApp(rawText) {
+            const lines = rawText.split('\n');
+            let lote = "";
+            let produtor = "";
+            let extensionista = "";
+            let classificacao = "Comum";
+            let status = "";
+            let idade = "";
+            let entregas = [];
+            let consumoFases = [];
+            let totalLiquido = "";
+
+            let section = "";
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+
+                if (line.includes("SUMÁRIO DE TRANSAÇÕES DE RAÇÃO - LOTE:")) {
+                    const match = line.match(/LOTE:\s*([^\s]+)/);
+                    if (match) lote = match[1];
+                } else if (line.startsWith("Fazenda/Aviário")) {
+                    const parts = line.split(":");
+                    if (parts.length > 1) {
+                        produtor = parts.slice(1).join(":").trim().replace(/\(Código: \d+\)/, "").trim();
+                    }
+                } else if (line.startsWith("Extensionista")) {
+                    const parts = line.split(":");
+                    if (parts.length > 1) extensionista = parts[1].trim();
+                } else if (line.startsWith("Classificação")) {
+                    const parts = line.split(":");
+                    if (parts.length > 1) classificacao = parts[1].trim();
+                } else if (line.startsWith("Status")) {
+                    const parts = line.split(":");
+                    if (parts.length > 1) status = parts[1].trim();
+                } else if (line.startsWith("Idade do Lote")) {
+                    const parts = line.split(":");
+                    if (parts.length > 1) idade = parts[1].trim();
+                }
+
+                if (line.startsWith("SALDO LÍQUIDO CONSUMIDO NO LOTE") || line.startsWith("Total Entregue")) {
+                    const parts = line.split(":");
+                    if (parts.length > 1) totalLiquido = parts[1].trim().replace(/\s*kg/, "").trim();
+                }
+
+                if (line.includes("ENTREGAS E RECEBIMENTOS DE RAÇÃO")) {
+                    section = "entregas";
+                    continue;
+                } else if (line.includes("SUMÁRIO DE OCORRÊNCIAS ESPECIAIS")) {
+                    section = "ocorrencias";
+                    continue;
+                } else if (line.includes("CONSUMO LÍQUIDO POR FASE DE RAÇÃO")) {
+                    section = "fases";
+                    continue;
+                }
+
+                if (section === "entregas" && line.includes("|")) {
+                    if (line.includes("Tipo") || line.includes("---")) continue;
+                    
+                    const cols = line.split("|").map(c => c.trim());
+                    if (cols.length >= 6) {
+                        const dateRaw = cols[0];
+                        const dateParts = dateRaw.split("-");
+                        const dateFormatted = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}` : dateRaw;
+                        
+                        const fase = cols[2];
+                        const volume = cols[3].replace(",0", "").trim();
+                        const carga = cols[5].replace("Carga:", "").trim();
+                        
+                        entregas.push(`• ${dateFormatted}: *${fase}* - ${volume} kg (Carga ${carga})`);
+                    }
+                }
+
+                if (section === "fases" && line.includes(":")) {
+                    if (line.includes("===")) continue;
+                    const parts = line.split(":");
+                    if (parts.length === 2) {
+                        const fase = parts[0].trim();
+                        const vol = parts[1].trim().replace(",0", "").trim();
+                        consumoFases.push(`• ${fase}: ${vol}`);
+                    }
+                }
+            }
+
+            if (entregas.length === 0) {
+                return `*🌾 C.VALE - DETALHES DE LOTE 🌾*\n` +
+                       `-----------------------------------\n` +
+                       `📍 *Lote composto:* ${lote || "N/A"}\n` +
+                       `👤 *Produtor:* ${produtor || "N/A"}\n` +
+                       `👩‍🌾 *Extensionista:* ${extensionista || "N/A"}\n` +
+                       `-----------------------------------\n\n` +
+                       `⚠️ *Nenhuma entrega ativa no SQLite para este lote.*`;
+            }
+
+            let msg = `*🌾 C.VALE - RESUMO DE ENTREGAS 🌾*\n`;
+            msg += `-----------------------------------\n`;
+            msg += `📍 *Lote composto:* ${lote}\n`;
+            msg += `👤 *Produtor:* ${produtor}\n`;
+            msg += `👩‍🌾 *Extensionista:* ${extensionista}\n`;
+            msg += `Classificação: ${classificacao}\n`;
+            if (status || idade) {
+                msg += `Status: ${status} | Idade: ${idade}\n`;
+            }
+            msg += `-----------------------------------\n\n`;
+            
+            msg += `📥 *ENTREGAS EFETUADAS:*\n`;
+            msg += entregas.join('\n') + `\n\n`;
+            
+            if (consumoFases.length > 0) {
+                msg += `📊 *CONSUMO POR FASE:*\n`;
+                msg += consumoFases.join('\n') + `\n\n`;
+            }
+            
+            if (totalLiquido) {
+                msg += `-----------------------------------\n`;
+                msg += `📈 *TOTAL CONSUMIDO:* *${totalLiquido}*\n`;
+                msg += `-----------------------------------\n`;
+            }
+            
+            msg += `_Gerado via Portal de Rótulos C.Vale_`;
+            return msg;
+        }
+
+        async function shareSumarioWhatsApp() {
+            if (!lastLoadedSumarioText) return;
+            
+            // Invoca o parser de formatação vertical adaptada
+            const formattedMessage = parseSumarioToWhatsApp(lastLoadedSumarioText);
+            
+            try {
+                // Copia a mensagem vertical otimizada para a área de transferência
+                await navigator.clipboard.writeText(formattedMessage);
+                
+                const btn = document.getElementById('btn-whatsapp-sumario');
+                const originalContent = btn.innerHTML;
+                
+                btn.innerHTML = `
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Copiado!
+                `;
+                btn.style.background = '#10b981';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.style.background = '#25d366';
+                }, 2000);
+            } catch (err) {
+                console.error("Erro ao copiar sumário formatado para o WhatsApp:", err);
+            }
+        }
+
+        function onEmailSelectSumarioChange() {
+            const select = document.getElementById('email-select-sumario');
+            const customGroup = document.getElementById('email-custom-group-sumario');
+            const emailInput = document.getElementById('email-input-sumario');
+            
+            if (select.value === 'custom') {
+                customGroup.style.display = 'flex';
+                emailInput.setAttribute('required', 'true');
+                emailInput.focus();
+            } else {
+                customGroup.style.display = 'none';
+                emailInput.removeAttribute('required');
+                emailInput.value = '';
+            }
+            document.getElementById('email-sumario-feedback').style.display = 'none';
+        }
+
+        async function sendSumarioEmail() {
+            const emailSelect = document.getElementById('email-select-sumario');
+            let toEmail = "";
+            
+            if (emailSelect.value === 'custom') {
+                const emailInput = document.getElementById('email-input-sumario');
+                toEmail = emailInput.value.trim();
+            } else {
+                toEmail = emailSelect.value;
+            }
+            
+            if (!toEmail) {
+                showEmailSumarioFeedback("Selecione um destinatário ou insira um e-mail válido.", "error");
+                return;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(toEmail)) {
+                showEmailSumarioFeedback("Formato de e-mail inválido.", "error");
+                return;
+            }
+            
+            const loteSelect = document.getElementById('lote-select');
+            const lote = loteSelect.value;
+            
+            if (!lote || !lastLoadedSumarioText) {
+                showEmailSumarioFeedback("Nenhum sumário ativo selecionado para envio.", "error");
+                return;
+            }
+            
+            const btn = document.getElementById('btn-email-sumario-submit');
+            const spinner = document.getElementById('email-sumario-spinner');
+            const btnText = document.getElementById('email-sumario-btn-text');
+            
+            btn.setAttribute('disabled', 'true');
+            spinner.style.display = 'inline-block';
+            btnText.textContent = '';
+            showEmailSumarioFeedback("Enviando e-mail...", "info");
+            
+            try {
+                const response = await fetch('/api/send-sumario-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: toEmail,
+                        lote: lote,
+                        text: lastLoadedSumarioText
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showEmailSumarioFeedback("E-mail enviado com sucesso!", "success");
+                    
+                    if (emailSelect.value === 'custom') {
+                        await fetchEmails();
+                        document.getElementById('email-select-sumario').value = toEmail;
+                        document.getElementById('email-custom-group-sumario').style.display = 'none';
+                        document.getElementById('email-input-sumario').value = '';
+                        document.getElementById('email-input-sumario').removeAttribute('required');
+                    }
+                    
+                    fetchLogs();
+                } else {
+                    showEmailSumarioFeedback(data.error || "Falha no envio de e-mail.", "error");
+                }
+            } catch (err) {
+                showEmailSumarioFeedback("Erro de conexão ao enviar e-mail.", "error");
+            } finally {
+                btn.removeAttribute('disabled');
+                spinner.style.display = 'none';
+                btnText.textContent = 'Enviar E-mail';
+            }
+        }
+
+        function showEmailSumarioFeedback(msg, type) {
+            const feedback = document.getElementById('email-sumario-feedback');
+            feedback.style.display = 'block';
+            feedback.textContent = msg;
+            
+            if (type === 'error') {
+                feedback.style.color = '#f87171';
+            } else if (type === 'success') {
+                feedback.style.color = '#34d399';
+            } else {
+                feedback.style.color = '#60a5fa';
+            }
+        }
+    </script>
+</body>
+</html>

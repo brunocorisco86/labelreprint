@@ -1,10 +1,10 @@
-# Impressão dos Rótulos Retroativos
+# Portal de Impressão de Rótulos de Ração - C.Vale
 
 > [!NOTE]
-> **Status do Projeto: Marco Concluído (100% Funcional)**  
-> As especificações e tarefas iniciais delineadas neste arquivo foram totalmente implementadas, testadas e refinadas. A documentação final de produção, arquitetura e instruções de uso encontra-se no [README.md](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/README.md) e na Skill Customizada em [.agents/skills/reimpressao_rotulos/SKILL.md](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/.agents/skills/reimpressao_rotulos/SKILL.md).
+> **Status do Projeto: Marco Concluído (100% Funcional - Versão 2.0.0)**  
+> As especificações iniciais e as expansões interativas (Abas, E-mails e WhatsApp) foram totalmente concluídas e integradas. A documentação completa de produção e instruções operacionais encontram-se no [README.md](file:///home/bruno/Documentos/1_C.VALE/2 - PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/README.md) e na Skill Customizada em [.agents/skills/reimpressao_rotulos/SKILL.md](file:///home/bruno/Documentos/1_C.VALE/2 - PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/.agents/skills/reimpressao_rotulos/SKILL.md).
 
-Esse repositorio se presta a imprimir os rótulos das rações de forma retroativa.
+Este repositório fornece a solução completa para emissão e impressão de rótulos de rações de forma retroativa e sob demanda.
 
 ***
 ## Campos a serem preenchidos no rótulo
@@ -59,40 +59,30 @@ GlobalGap: Certificação Global Gap do aviário. Os lotes destes aviários são
 
 ***
 ## Roadmap
-- Organize a stack / arquitetura da solução
-- Defina as skills necessárias para a execução da tarefa
-- Crie subagentes para que possamos dividir melhor as tarefas
-- Crie o README.md e primeiras documentação
-- Definição do MER dos dados
-- Merge dos dados do dataset e criação de um dataset robusto salvo em /data/processed
-	- Pode ser em .csv ou .db (SQLite)
-- Tratamento dos dados para o trabalho de preenchimento dos rótulos
-- Preparar os rótulos (templates) para receber o preenchimento
-- Criação de um codigo para criar as exportações dos arquivos em .pdf a serem impressos
-	- Criação dos arquivos respeitando a agrupação (exemplo):
-		Export
-		├── Extensionista
-		│   ├── GlobalGap
-		│   │   └── Granja
-		│   │       └── Fazenda-Lote
-		│   │           ├── RFPI050626.pdf
-		│   │           └── RFI11006.pdf
-		│   └── Comum
-		│       └── Granja
-		│           └── Fazenda-Lote
-		│               ├── RFPI050626.pdf
-		│               └── RFI11006.pdf
-- Gerar os arquivos para impressão
-- Criação de um site em flask ou em um framework minimalsta em localhost para que possamos colocar o aviario e lote e consigamos resgatar quais são os rótulos a serem impressos de forma acionionavel (backend + frontend)
-	Variaveis:
-		- Dias de Shelflife (60 dias como standard) mas que seja editavel
-		- Aviario
-		- Lote
+- [x] Organize a stack / arquitetura da solução
+- [x] Defina as skills necessárias para a execução da tarefa
+- [x] Crie subagentes para que possamos dividir melhor as tarefas
+- [x] Crie o README.md e primeiras documentação
+- [x] Definição do MER dos dados
+- [x] Merge dos dados do dataset e criação de um dataset robusto salvo em `/data/processed` (SQLite e Pandas)
+- [x] Tratamento de redundâncias, duplicidades e inversões zootécnicas no ETL
+- [x] Preparar os rótulos (templates) para receber o preenchimento (Coordenadas no Y-invertido)
+- [x] Criação de código para criar as exportações em PDF e unificação com compressão PyPDF
+- [x] Geração física de produção com unificação em lote e geração de sumário financeiro
+- [x] **Portal de Impressão de Rótulos de Ração (Flask Local)**:
+	- [x] Aba 1: Emissão Avulsa (Formulário interativo com datas personalizadas).
+	- [x] Aba 2: Geração por Núcleo (Processamento em lote via vinculações da planilha).
+	- [x] Aba 3: Consulta Lotes e Ficha de Sumário (Visualização retroativa de entregas).
+	- [x] Mapeamento dinâmico de validades por fabricante e desduplicação física.
+	- [x] Canal de Envio por E-mail (Mime SMTP com Azul Cobalto e Logo C.Vale inline).
+	- [x] Canal de Envio para WhatsApp (Markdown vertical otimizado para celulares copiado ao clipboard).
+	- [x] Console de Auditoria Web em tempo real (`logs/geracao_manual.log`).
 		
 ***
 ## Melhorias futuras
-- Deixar o codigo pronto para receber dados por API e imprimir o rótulo para a implantação na empresa
-- Deixar pronto para a hospedagem em um servidor on premises ou remoto (VPS)
+- Integração por chamadas de API direta do SAP/Mtech no portal.
+- Hospedagem do servidor em VPS on-premises do datacenter da cooperativa.
+- Integração com um gateway de mensagens corporativo para envio ativo de notificações.
 
 *** 
 ## Premissas

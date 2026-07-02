@@ -1,6 +1,6 @@
-# Regras e Contexto do Projeto - Reimpressão de Rótulos C.Vale
+# Diretrizes Operacionais e Regras de Negócio - Rótulos de Ração C.Vale
 
-Este arquivo contém as diretrizes específicas do projeto para os agentes de IA operando nesta base de código.
+Este arquivo contém as diretrizes do comitê do projeto e regras específicas para os agentes de IA operando nesta base de código.
 
 ## 📋 Regras de Negócio de Dados
 
@@ -34,3 +34,20 @@ Essas cargas inativas recebem `id_rotulo = NULL` no SQLite, mas são preservadas
 1. **Comunicação Eficiente**: Desenvolver e manter uma plataforma centralizada para disponibilizar dados e rótulos de forma clara e ágil.
 2. **Processos Otimizados**: Redesenhar fluxos operacionais de confirmação e rastreabilidade de pedidos para minimizar desvios e sobras.
 3. **Tecnologia Habilitadora**: Apoiar-se na integração com sistemas legados, TMS (rastreamento de frotas e pesagem) e IoT (sensores de nível nos silos) para validar as operações físicas.
+
+## ✉️ Diretrizes de Comunicação e Compartilhamento
+
+### Configuração e Validação de Canais
+- **SMTP**: Todas as credenciais SMTP devem ser mantidas no arquivo `.env`. Para validação segura das credenciais de e-mail, utilize o script interativo `scripts/test_smtp.py`.
+- **E-mails Corporativos Padrão**: As comunicações oficiais de testes e emissão manual contam com os destinatários salvos em `config/destinatarios_salvos.json` pre-seeded com:
+  - `bruno.conter@cvale.com.br`
+  - `vinicius.duarte@cvale.com.br`
+  Novos destinatários digitados são validados sintaticamente e salvos de forma incremental no JSON para uso posterior.
+
+### Envio de Sumários por E-mail
+- **Identidade Visual**: Os e-mails de sumário seguem a diagramação Azul Cobalto (`#1e3a8a`) e Branco com o logotipo C.Vale inline (`cid:logo_cvale`).
+- **Visual de Console**: O texto do sumário de entregas é renderizado em fonte monoespaçada dentro de um container com fundo preto e cor azul claro neon (`#38bdf8`) para mimetizar fielmente a interface do console do Portal Web.
+
+### Compartilhamento para WhatsApp
+- **Limitação Mobile**: Telas de smartphones sofrem com quebras de linha automáticas ao receber textos em tabela monoespaçada. Por conta disso, mensagens para WhatsApp devem ser diagramadas estritamente de forma **vertical**.
+- **Parser de WhatsApp**: Utilize a rotina de parsing (`parseSumarioToWhatsApp` no frontend) para extrair as entregas de cargas e convertê-las em bullet points (`• DD/MM: Fase - Volume kg (Carga X)`), utilizando emojis e negritos markdown do WhatsApp. O resultado deve ser copiado diretamente para a área de transferência do usuário (Clipboard), evitando redirecionamentos ou abertura de novas abas.

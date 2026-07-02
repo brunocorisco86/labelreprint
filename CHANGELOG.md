@@ -1,6 +1,21 @@
-# 📋 Changelog do Projeto - Reimpressão de Rótulos C.Vale
+# 📋 Changelog do Projeto - Impressão de Rótulos de Ração C.Vale
 
-Este arquivo registra o histórico cronológico de todas as modificações, melhorias e refatorações realizadas no sistema de geração e reimpressão de rótulos.
+Este arquivo registra o histórico cronológico de todas as modificações, melhorias e refatorações realizadas no sistema de geração e impressão de rótulos de ração.
+
+---
+
+## [2.0.0] - 2026-07-02
+### Adicionado
+*   **Portal de Impressão de Rótulos de Ração (UI com Abas)**: Desenvolvido portal local Flask unificado com três abas de controle: *Emissão Avulsa*, *Geração Núcleo* e *Consulta Lotes*.
+*   **Aba Consulta Lotes & Sumários**: Painel interativo para pesquisar produtores e carregar o arquivo `sumario_entregas.txt` correspondente de forma dinâmica, renderizando no terminal lateral em azul neon claro.
+*   **Envio de Rótulos e Sumários por E-mail**: Integração SMTP com o backend Flask (`email_sender.py`) para enviar e-mails estilizados com a paleta Azul Cobalto e Branco contendo o logotipo institucional da C.Vale inline (CID).
+*   **Histórico de Destinatários de E-mail (JSON)**: Criada base de e-mails persistente em `config/destinatarios_salvos.json` contendo endereços pré-carregados (`bruno.conter@cvale.com.br` e `vinicius.duarte@cvale.com.br`) e salvando automaticamente novos e-mails digitados.
+*   **Exportação Otimizada para WhatsApp (Mobile-First)**: Botão verde para copiar o sumário do lote já formatado verticalmente para colar no WhatsApp, utilizando emojis e bullet-points sem quebras de linha para visualização perfeita em qualquer celular.
+*   **Utilitário de Teste de Conexão SMTP (`test_smtp.py`)**: Script interativo no console para validar conexão TCP, criptografia TLS/SSL e login de e-mail a partir do arquivo `.env`.
+
+### Alterado
+*   **Rebranding Geral da Solução**: Removido o termo "Reimpressão" para afastar a conotação de retrabalho. O sistema foi rebatizado como **Portal de Impressão de Rótulos de Ração C.Vale**. O banner do servidor, cabeçalhos, rodapés e e-mails foram redefinidos para a nova nomenclatura.
+*   **Terminal de Logs com Duplo Propósito**: O console lateral de auditoria agora transiciona dinamicamente para mostrar sumários de lotes em azul neon claro, restaurando a visualização de logs em verde neon ao retornar para as abas de geração.
 
 ---
 

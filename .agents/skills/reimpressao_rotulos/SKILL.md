@@ -1,9 +1,9 @@
 ---
 name: reimpressao_rotulos
-description: Orientações de engenharia de software e regras de negócio para manutenção do sistema de Reimpressão de Rótulos da C.Vale.
+description: Orientações de engenharia de software e regras de negócio para manutenção do sistema de Impressão de Rótulos de Ração da C.Vale.
 ---
 
-# 🛠️ Skill de Reimpressão de Rótulos C.Vale
+# 🛠️ Skill de Impressão de Rótulos de Ração C.Vale
 
 Esta skill fornece diretrizes técnicas e operacionais para manutenção, depuração e expansão do sistema de geração retroativa de rótulos de ração.
 
@@ -59,4 +59,16 @@ rm -rf Export/*/ && PYTHONPATH=. venv/bin/python3 scripts/generate_test_lotes.py
 ### 4. Execução da Suíte de Testes
 ```bash
 venv/bin/pytest tests/test_aviario_lote_generation.py -v -s
+```
+
+### 5. Inicialização do Portal Web Local
+Para iniciar o servidor Flask em localhost:
+```bash
+PYTHONPATH=. venv/bin/python3 scripts/run_webserver.py
+```
+
+### 6. Teste de Autenticação e Credenciais SMTP
+Para testar a conexão SMTP do `.env` e enviar um e-mail de teste no console interativo:
+```bash
+PYTHONPATH=. venv/bin/python3 scripts/test_smtp.py
 ```

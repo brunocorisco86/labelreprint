@@ -68,6 +68,26 @@ Para evitar a poluição de múltiplos PDFs idênticos nos diretórios de export
 
 ---
 
+## 🖨️ Diretrizes para Reimpressão Manual (Sob Demanda) e Integração Web
+
+Com a introdução da geração manual de rótulos avulsos (sem depender do pipeline de banco de dados), as seguintes regras foram estabelecidas:
+
+### 1. Flexibilidade da Data de Validade
+*   **Comportamento Padrão**: A data de validade é calculada somando os dias configurados no [shelf_life.json](file:///home/bruno/Documentos/1_C.VALE/2%20-%20PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/config/shelf_life.json) à data de fabricação.
+*   **Sobrescrita Customizada**: O operador pode opcionalmente digitar uma data de validade personalizada no formato `dd/mm/aaaa`. O sistema aceita a alteração e recalcula dinamicamente a diferença de dias (shelf-life) para aplicar no motor de renderização PDF.
+*   **Validação**: A data de validade não pode ser anterior à data de fabricação.
+
+### 2. Geração Sequencial (Looping)
+*   Como a rotina operacional envolve frequentemente a reimpressão de múltiplos rótulos avulsos para datas e tipos de rações diferentes na mesma sessão, o script deve rodar em um ciclo contínuo, retornando ao menu de seleção após a emissão de cada PDF, em vez de encerrar imediatamente.
+
+### 3. Log Incremental de Auditoria
+*   Diferente do pipeline batch (cujo log é reescrito a cada execução ponta a ponta), as execuções manuais avulsas são registradas incrementalmente (modo append) no arquivo [logs/geracao_manual.log](file:///home/bruno/Documentos/1_C.VALE/2%20-%20PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/logs/geracao_manual.log) para fins de rastreabilidade e auditoria (quem solicitou, qual ração, quais datas e se houve sucesso).
+
+### 4. Arquitetura para a Interface Web (Roadmap)
+*   A engine interativa implementada no terminal em [scripts/generate_manual_label.py](file:///home/bruno/Documentos/1_C.VALE/2%20-%20PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/scripts/generate_manual_label.py) serve como especificação direta para o módulo de **Emissão Avulsa** do Portal Web. O backend web deverá expor um formulário contendo esses mesmos campos e reutilizar a classe `PDFLabelWriter`, disponibilizando o PDF gerado diretamente para download.
+
+---
+
 ## 🔗 Relação com os Pilares do Projeto
 
 Essas regras e validações se conectam diretamente com a estratégia global do projeto:
@@ -75,3 +95,4 @@ Essas regras e validações se conectam diretamente com a estratégia global do 
 - **Processos Otimizados (Confirmação de Pedidos e Fluxos)**: A identificação automática de sobras e anomalias de recolha previne erros de faturamento, evita retrabalho operacional e melhora a acurácia dos inventários físicos.
 - **Tecnologia Habilitadora (TMS e Sensores)**: O cruzamento dos dados de pesagem e veículo (TMS) com o nível dos silos (sensores) valida se a quantidade recolhida condiz com a sobra real estimada no aviário.
 - **Comunicação Eficiente**: A interface centralizada deve alertar a equipe operacional de logística ou os extensionistas quando uma recolha com padrão suspeito (ração diferente de abate) for detectada.
+

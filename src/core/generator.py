@@ -47,7 +47,7 @@ class BatchGenerator:
     def get_connection(self):
         return sqlite3.connect(self.db_path)
 
-    def generate_all(self, shelf_life_days=None, limit=None, tipo_racao_filtro=None):
+    def generate_all(self, shelf_life_days=None, limit=None, tipo_racao_filtro=None, lotes_filtro=None):
         """
         Executa a geração dos rótulos em lote.
         Permite customizar os dias de validade e limitar a quantidade de registros (para testes).
@@ -69,6 +69,10 @@ class BatchGenerator:
         if tipo_racao_filtro:
             tipo_filtro_limpo = str(tipo_racao_filtro).upper()
             df_entregas = df_entregas[df_entregas['TipoRacao'].astype(str).str.upper() == tipo_filtro_limpo]
+            
+        # Filtragem por lotes específicos (para geração sob demanda/filtro de núcleo)
+        if lotes_filtro:
+            df_entregas = df_entregas[df_entregas['FazendaLote'].isin(lotes_filtro)]
         
         total_records = len(df_entregas)
         filtro_msg = f" (Filtro Tipo: {tipo_racao_filtro})" if tipo_racao_filtro else ""

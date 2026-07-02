@@ -1,8 +1,8 @@
-# 🖨️ Reimpressão Retroativa de Rótulos de Ração - C.Vale
+# 🖨️ Portal de Impressão de Rótulos de Ração - C.Vale
 
-Este projeto foi desenvolvido para automatizar a geração e reimpressão de rótulos de rações de forma retroativa para a C.Vale e seus terceiros integrados. O sistema processa dados históricos de entregas de ração, faz o enriquecimento com dados cadastrais de fazendas e regiões, e desenha dinamicamente as informações do lote nos arquivos PDF de modelo (templates) correspondentes.
+Este projeto foi desenvolvido para automatizar a geração e impressão de rótulos de rações de forma retroativa e sob demanda para a C.Vale e seus parceiros integrados. O sistema processa dados históricos de entregas de ração, faz o enriquecimento com dados cadastrais de fazendas e regiões, e desenha dinamicamente as informações do lote nos arquivos PDF de modelo (templates) correspondentes.
 
-O pipeline final consolidado gera apenas um **PDF mesclado unificado** (comprimido para economia de armazenamento) e um **Sumário Geral de Auditoria** por lote, eliminando a poluição visual de PDFs avulsos de cargas e facilitando o trabalho de impressão do operador.
+O portal centralizado gera apenas um **PDF mesclado unificado** (comprimido para economia de armazenamento) e um **Sumário Geral de Auditoria** por lote, facilitando o trabalho de impressão do operador.
 
 ---
 
@@ -83,14 +83,63 @@ Caso necessite priorizar o lote de impressão física ou processar lotes separad
 4.  **Geração Retroativa:** Gera e escreve as informações nos PDFs de cargas, cria os arquivos unificados condensados de produção (eliminando duplicidades operacionais, devoluções e aplicando compressão de imagens de ~46.5%), escreve os arquivos de sumários TXT e remove os PDFs de cargas intermediárias.
 5.  **Logs Consolidados:** Escreve um log unificado em [pipeline_ponta_a_ponta.log](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/logs/pipeline_ponta_a_ponta.log).
 
+---
+
+### ✍️ 5. Geração e Reimpressão Manual de Rótulo Específico
+
+Se você precisar gerar manualmente um rótulo preenchido para uma ração e um dia de fabricação específico (sem depender de dados no banco ou planilhas), você tem duas opções de execução:
+
+#### Opção A: Pelo Portal Web Local (Recomendado)
+O projeto conta com um portal local moderno e intuitivo para seleção de templates, preenchimento interativo de datas (com preview dinâmico), consulta de lotes zootécnicos e compartilhamento de relatórios.
+
+1. **Inicie o servidor local de desenvolvimento:**
+   ```bash
+   PYTHONPATH=. venv/bin/python3 scripts/run_webserver.py
+   ```
+2. **Acesse no navegador:** Abra o endereço [http://localhost:5000](http://localhost:5000).
+3. **Abas de Controle e Operação:**
+   * **Aba 1 (Emissão Avulsa):** Escolha o tipo de ração/template, a data de fabricação, altere se desejar a data de validade através de um calendário interativo e gere o PDF de forma avulsa. Após gerar, você pode baixar o PDF, enviá-lo por e-mail com logotipo C.Vale embutido, ou cadastrar novos destinatários.
+   * **Aba 2 (Geração Núcleo):** Selecione o núcleo de criação desejado para listar todas as granjas vinculadas e o volume de entregas. Clique em "Gerar Rótulos do Núcleo" para disparar o pipeline relacional completo de forma segmentada.
+   * **Aba 3 (Consulta Lotes):** Escolha o Produtor/Aviário e o Lote Composto para renderizar a ficha do lote e o sumário consolidado diretamente na tela. O console de terminal transiciona para azul neon claro exibindo o arquivo `sumario_entregas.txt`. Nesta aba você pode copiar o sumário diagramado verticalmente para colar no WhatsApp do produtor, ou enviar a ficha por e-mail.
+4. **Console de Auditoria Lateral:** O painel direito do terminal monitora logs de auditoria (`logs/geracao_manual.log`) em tempo real em verde neon ou exibe sumários ativos de lotes em azul neon claro.
+
+---
+
+#### Opção B: Pelo Terminal Interativo (CLI)
+Uma alternativa direta via console interativo que roda em ciclo de loop sequencial.
+
+1. **Execute o script interativo:**
+   ```bash
+   PYTHONPATH=. venv/bin/python3 scripts/generate_manual_label.py
+   ```
+2. **Escolha o tipo de ração** informando o número correspondente exibido no terminal. As opções são resolvidas a partir do arquivo [template_resolver.json](file:///home/bruno/Documentos/1_C.VALE/2%20-%20PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/config/template_resolver.json).
+3. **Informe a data de fabricação** no formato `dd/mm/aaaa` (ex: `30/06/2026`).
+4. **Valide as informações calculadas** apresentadas no resumo do console e opcionalmente insira uma data de validade customizada.
+5. **Acesse o arquivo gerado** na pasta `Export/manuais/`.
+
+---
+
+#### Opção C: Geração por Núcleo de Criação (CLI)
+Caso queira rodar o pipeline em lote de forma segmentada para todos os lotes que pertencem a um núcleo específico (com base nas vinculações cadastradas em `FiltroMissaoEuropa.xlsx`):
+
+1. **Execute o script de núcleo:**
+   ```bash
+   PYTHONPATH=. venv/bin/python3 scripts/generate_labels_by_nucleo.py
+   ```
+2. **Selecione o núcleo:** O terminal exibirá todos os núcleos com lotes ativos cadastrados. Digite o número do núcleo desejado.
+3. **Valide a listagem de granjas:** O script buscará todos os lotes associados, listará o nome de cada granja e o total de entregas encontradas na base SQLite.
+4. **Gerar e Mesclar:** Confirme digitando **`s`**. A engine gerará os PDFs unificados e sumários compactados para todas as granjas do respectivo núcleo na pasta `Export/`.
 
 ---
 
 ## 📂 Organização do Repositório
 
 *   **[scripts/run_pipeline_ponta_a_ponta.py](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/scripts/run_pipeline_ponta_a_ponta.py)**: Script orquestrador mestre.
+*   **[scripts/run_webserver.py](file:///home/bruno/Documentos/1_C.VALE/2 - PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/scripts/run_webserver.py)**: Script de inicialização do portal de impressão de rótulos de ração.
+*   **[scripts/generate_manual_label.py](file:///home/bruno/Documentos/1_C.VALE/2%20-%20PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/scripts/generate_manual_label.py)**: Script interativo para geração manual e pontual de rótulos via CLI.
+*   **[scripts/generate_labels_by_nucleo.py](file:///home/bruno/Documentos/1_C.VALE/2%20-%20PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/scripts/generate_labels_by_nucleo.py)**: Script de geração segmentada em lote filtrada por Núcleo de Criação.
 *   **[src/core/data_manager.py](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/src/core/data_manager.py)**: Engine de ETL e ingestão para o SQLite.
 *   **[src/core/generator.py](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/src/core/generator.py)**: Engine de geração em lote, sumários e mesclagem compactada de PDFs.
-*   **[src/pdf/writer.py](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/src/pdf/writer.py)**: Engine geométrica de preenchimento textual no PDF original (ReportLab).
+*   **[src/pdf/writer.py](file:///home/bruno/Documentos/1_C.VALE/2 - PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/src/pdf/writer.py)**: Engine geométrica de preenchimento textual no PDF original (ReportLab).
 *   **[config/](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config)**: Configurações de campos ([templates.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/templates.json)), fallbacks ([template_resolver.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/template_resolver.json)) e validades padrão ([shelf_life.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/shelf_life.json)).
 *   **[docs/mer.md](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/docs/mer.md)**: Diagrama lógico e especificação física do modelo de dados (Star Schema).
