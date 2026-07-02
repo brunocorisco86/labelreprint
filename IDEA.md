@@ -55,7 +55,7 @@ Teremos diferentes templates de fábricas da C.Vale e de terceiros, teremos um t
 Extensionista: Veterinario ou Técnico que atende a granja. Pode haver campos onde ele pode ser chamado como Extensionista ou Técnico. Se o dado for numeros ele se refere ao BP (Business Partner number do SAP), daí voce desconsidera. Aplique essa lógica quando estiver fazendo a estatistica descritiva.
 Aviario: Local onde são criados os animais, nos datasets pode ser chamado de Fazenda também
 Lote de Frango: Concatenação do Aviario + Lote (numero ordinal dos lotes criados no aviario), pode ser chamado de Lote Composto ou AviarioLote
-GlobalGap: Certificação Global Gap do aviário. Os lotes destes aviários são destinados para clientes distintos, no template de rótulo de ração pode ser encontrado GG 
+GlobalGap / Global SLP: Termos sinônimos representativos da mesma certificação do aviário (Global Gap ou Global SLP). Os lotes destes aviários contam com templates de rótulo exclusivos identificados pelas siglas GG ou SLP no disco.
 
 ***
 ## Roadmap

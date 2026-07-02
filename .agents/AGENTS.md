@@ -29,6 +29,10 @@ Essas cargas inativas recebem `id_rotulo = NULL` no SQLite, mas são preservadas
 - **Lógica**: O campo `lote` impresso fisicamente no rótulo PDF representa o **lote de fabricação da ração**, e não o lote de criação das aves do aviário. 
 - **Valor**: Deve ser preenchido com a data de fabricação da ração formatada no padrão **`DDMMAA`** (ex: se fabricado em `30/06/2026`, o lote impresso será `300626`).
 
+### Sinonímia de Certificações (Global Gap / Global SLP)
+- **Lógica**: As siglas **Global Gap** e **Global SLP** (ou simplesmente SLP/GG) referem-se à mesma especificação regulatória e representam **sinônimos** exatos no contexto do projeto.
+- **Tratamento**: Quaisquer regras ou filtros zootécnicos voltados a "Global Gap" devem abranger "Global SLP" de forma idêntica (layouts especiais de templates que possuem identificador `GG` ou `SLP`).
+
 ## 📐 Alinhamento Técnico e Pilares
 
 1. **Comunicação Eficiente**: Desenvolver e manter uma plataforma centralizada para disponibilizar dados e rótulos de forma clara e ágil.
