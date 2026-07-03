@@ -55,3 +55,8 @@ Essas cargas inativas recebem `id_rotulo = NULL` no SQLite, mas são preservadas
 ### Compartilhamento para WhatsApp
 - **Limitação Mobile**: Telas de smartphones sofrem com quebras de linha automáticas ao receber textos em tabela monoespaçada. Por conta disso, mensagens para WhatsApp devem ser diagramadas estritamente de forma **vertical**.
 - **Parser de WhatsApp**: Utilize a rotina de parsing (`parseSumarioToWhatsApp` no frontend) para extrair as entregas de cargas e convertê-las em bullet points (`• DD/MM: Fase - Volume kg (Carga X)`), utilizando emojis e negritos markdown do WhatsApp. O resultado deve ser copiado diretamente para a área de transferência do usuário (Clipboard), evitando redirecionamentos ou abertura de novas abas.
+
+## 🖥️ Acesso ao Ambiente de Produção
+
+- **Conexão Local (na LAN)**: O acesso ao ambiente de produção é feito pelo alias `ssh peixe` (IP `192.168.1.99`).
+- **Conexão Remota (via Tailscale)**: O acesso remoto é feito pelo alias `ssh peixe-remoto` (IP `100.74.64.89`), utilizando autenticação de chave pública SSH para o usuário `root` (sem necessidade de senha).

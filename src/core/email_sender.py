@@ -27,20 +27,36 @@ class EmailSender:
 
     def send_label_email(self, to_email, pdf_path, label_details):
         """
-        Envia o rótulo PDF gerado para o e-mail informado.
+        Envia o rótulo PDF ou ZIP gerado para o e-mail informado.
         """
         if not self.smtp_server or not self.smtp_username or not self.smtp_password:
             raise ValueError("Configurações de SMTP incompletas no arquivo .env (SMTP_SERVER, SMTP_USERNAME, SMTP_PASSWORD)")
 
-        # Valida se o arquivo PDF existe
+        # Valida se o arquivo PDF/ZIP existe
         if not os.path.exists(pdf_path):
-            raise FileNotFoundError(f"Arquivo PDF para anexo não encontrado em: {pdf_path}")
+            raise FileNotFoundError(f"Arquivo para anexo não encontrado em: {pdf_path}")
+
+        is_zip = pdf_path.endswith('.zip')
 
         # Mensagem raiz MIMEMultipart do tipo 'related' para conter o HTML e a imagem inline CID
         msg = MIMEMultipart('related')
-        msg['Subject'] = f"Rótulo de Ração - Lote {label_details.get('lote', '-')} - {label_details.get('fornecedor', '-')} ({label_details.get('fase', '-')})"
+        if is_zip:
+            msg['Subject'] = f"Rótulos de Ração (Todos) - Lote {label_details.get('lote', '-')} - Fabricação {label_details.get('data_fabricacao', '-')}"
+        else:
+            msg['Subject'] = f"Rótulo de Ração - Lote {label_details.get('lote', '-')} - {label_details.get('fornecedor', '-')} ({label_details.get('fase', '-')})"
         msg['From'] = f"{self.from_name} <{self.from_email}>"
         msg['To'] = to_email
+
+        if is_zip:
+            intro_p = "O lote de rótulos de ração solicitado foi gerado com sucesso pelo sistema e está compactado no arquivo ZIP anexado a este e-mail."
+        else:
+            intro_p = "O rótulo de ração solicitado foi gerado com sucesso pelo sistema e está anexado a este e-mail pronto para impressão física."
+
+        validade_dias = label_details.get('validade_dias', '-')
+        if validade_dias == '-':
+            validade_str = f"{label_details.get('data_validade', '-')}"
+        else:
+            validade_str = f"{label_details.get('data_validade', '-')} ({validade_dias} dias)"
 
         # Template HTML em Azul Cobalto e Branco
         html_body = f"""
@@ -141,7 +157,7 @@ class EmailSender:
                 </div>
                 <div class="content">
                     <p>Olá,</p>
-                    <p>O rótulo de ração solicitado foi gerado com sucesso pelo sistema e está anexado a este e-mail pronto para impressão física.</p>
+                    <p>{intro_p}</p>
                     
                     <div class="alert-box">
                         <strong>Lote Impresso:</strong> O lote físico gerado a partir da data de fabricação é <strong>{label_details.get('lote', '-')}</strong>.
@@ -166,7 +182,7 @@ class EmailSender:
                         </tr>
                         <tr>
                             <th>Data de Validade</th>
-                            <td>{label_details.get('data_validade', '-')} ({label_details.get('validade_dias', '-')} dias)</td>
+                            <td>{validade_str}</td>
                         </tr>
                     </table>
                     
@@ -197,15 +213,15 @@ class EmailSender:
                 msgImage.add_header('Content-Disposition', 'inline', filename='logo_cvale.jpeg')
                 msg.attach(msgImage)
 
-        # Anexa o PDF do rótulo
-        pdf_name = os.path.basename(pdf_path)
+        # Anexa o PDF ou ZIP do rótulo
+        attachment_name = os.path.basename(pdf_path)
         with open(pdf_path, "rb") as attachment:
             part = MIMEBase("application", "octet-stream")
             part.set_payload(attachment.read())
             encoders.encode_base64(part)
             part.add_header(
                 "Content-Disposition",
-                f"attachment; filename= {pdf_name}",
+                f"attachment; filename= {attachment_name}",
             )
             msg.attach(part)
 

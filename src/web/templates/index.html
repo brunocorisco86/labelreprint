@@ -625,6 +625,18 @@
                                 </select>
                             </div>
 
+                            <!-- Switch para Emitir Todos os Tipos -->
+                            <div class="switch-container">
+                                <div class="switch-label">
+                                    <span class="switch-title">Emitir um de cada tipo (todos)?</span>
+                                    <span class="switch-subtitle">Gera e empacota em ZIP um rótulo de cada tipo disponível</span>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="emit-all-types-toggle" onchange="toggleEmitAllTypes()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
                             <!-- Data de Fabricação -->
                             <div class="form-group">
                                 <label for="fab-date">Data de Fabricação</label>
@@ -706,7 +718,7 @@
                             </a>
                             
                             <!-- Seção de Envio por E-mail -->
-                            <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div id="email-section" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
                                 <label for="email-select" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Enviar por E-mail</label>
                                 
                                 <!-- Dropdown de destinatários -->
@@ -1345,6 +1357,21 @@
             calculateDates();
         }
 
+        // Toggle para emitir todos os tipos
+        function toggleEmitAllTypes() {
+            const emitAll = document.getElementById('emit-all-types-toggle').checked;
+            const select = document.getElementById('template-select');
+            if (emitAll) {
+                select.removeAttribute('required');
+                select.setAttribute('disabled', 'true');
+                select.value = "";
+            } else {
+                select.setAttribute('required', 'true');
+                select.removeAttribute('disabled');
+            }
+            calculateDates();
+        }
+
         // Toggle do Switch de Validade Customizada
         function toggleCustomValidity() {
             const toggle = document.getElementById('custom-validity-toggle');
@@ -1363,11 +1390,9 @@
 
         // Calcula e exibe as datas no painel de preview avulso
         function calculateDates() {
-            const select = document.getElementById('template-select');
-            const pdf = select.value;
-            if (!pdf) return;
+            const emitAllToggle = document.getElementById('emit-all-types-toggle');
+            const emitAll = emitAllToggle ? emitAllToggle.checked : false;
             
-            const template = templates.find(t => t.pdf === pdf);
             const fabVal = document.getElementById('fab-date').value;
             if (!fabVal) return;
             
@@ -1376,34 +1401,6 @@
             
             const toggle = document.getElementById('custom-validity-toggle');
             const isCustom = toggle.checked;
-            
-            let valDate;
-            let days;
-            
-            if (isCustom) {
-                const valVal = document.getElementById('val-date').value;
-                if (!valVal) return;
-                
-                const valParts = valVal.split('-');
-                valDate = new Date(valParts[0], valParts[1] - 1, valParts[2]);
-                
-                if (valDate < fabDate) {
-                    showError("A data de validade não pode ser anterior à data de fabricação.");
-                    document.getElementById('btn-submit').setAttribute('disabled', 'true');
-                    return;
-                } else {
-                    hideError();
-                    document.getElementById('btn-submit').removeAttribute('disabled');
-                }
-                
-                days = Math.round((valDate - fabDate) / (1000 * 60 * 60 * 24));
-            } else {
-                hideError();
-                document.getElementById('btn-submit').removeAttribute('disabled');
-                days = shelfLifeConfigs[template.fornecedor] || 60;
-                valDate = new Date(fabDate);
-                valDate.setDate(valDate.getDate() + days);
-            }
             
             const format = (d) => {
                 const day = String(d.getDate()).padStart(2, '0');
@@ -1418,19 +1415,96 @@
             const lote = `${day}${month}${yearStr}`;
             
             const previewBox = document.getElementById('preview-box');
-            previewBox.innerHTML = `
-                Lote Impresso: <strong style="color: var(--primary); font-family: 'JetBrains Mono', monospace;">${lote}</strong><br>
-                Fabricação: <strong>${format(fabDate)}</strong> &bull; 
-                Validade: <strong>${format(valDate)}</strong> (${days} dias ${isCustom ? 'personalizados' : 'padrão'})
-            `;
+            
+            if (emitAll) {
+                if (isCustom) {
+                    const valVal = document.getElementById('val-date').value;
+                    if (!valVal) return;
+                    
+                    const valParts = valVal.split('-');
+                    const valDate = new Date(valParts[0], valParts[1] - 1, valParts[2]);
+                    
+                    if (valDate < fabDate) {
+                        showError("A data de validade não pode ser anterior à data de fabricação.");
+                        document.getElementById('btn-submit').setAttribute('disabled', 'true');
+                        return;
+                    } else {
+                        hideError();
+                        document.getElementById('btn-submit').removeAttribute('disabled');
+                    }
+                    
+                    const days = Math.round((valDate - fabDate) / (1000 * 60 * 60 * 24));
+                    previewBox.innerHTML = `
+                        Lote Impresso: <strong style="color: var(--primary); font-family: 'JetBrains Mono', monospace;">${lote}</strong><br>
+                        Fabricação: <strong>${format(fabDate)}</strong> &bull; 
+                        Validade: <strong>${format(valDate)}</strong> (${days} dias personalizados para todos)
+                    `;
+                } else {
+                    hideError();
+                    document.getElementById('btn-submit').removeAttribute('disabled');
+                    previewBox.innerHTML = `
+                        Lote Impresso: <strong style="color: var(--primary); font-family: 'JetBrains Mono', monospace;">${lote}</strong><br>
+                        Fabricação: <strong>${format(fabDate)}</strong> &bull; 
+                        Validade: <strong>Padrão de cada fabricante</strong>
+                    `;
+                }
+            } else {
+                const select = document.getElementById('template-select');
+                const pdf = select.value;
+                if (!pdf) {
+                    document.getElementById('btn-submit').setAttribute('disabled', 'true');
+                    previewBox.innerHTML = "Selecione a ração e insira a data de fabricação para ver o resumo de datas.";
+                    return;
+                }
+                
+                const template = templates.find(t => t.pdf === pdf);
+                if (!template) return;
+                
+                let valDate;
+                let days;
+                
+                if (isCustom) {
+                    const valVal = document.getElementById('val-date').value;
+                    if (!valVal) return;
+                    
+                    const valParts = valVal.split('-');
+                    valDate = new Date(valParts[0], valParts[1] - 1, valParts[2]);
+                    
+                    if (valDate < fabDate) {
+                        showError("A data de validade não pode ser anterior à data de fabricação.");
+                        document.getElementById('btn-submit').setAttribute('disabled', 'true');
+                        return;
+                    } else {
+                        hideError();
+                        document.getElementById('btn-submit').removeAttribute('disabled');
+                    }
+                    
+                    days = Math.round((valDate - fabDate) / (1000 * 60 * 60 * 24));
+                } else {
+                    hideError();
+                    document.getElementById('btn-submit').removeAttribute('disabled');
+                    days = shelfLifeConfigs[template.fornecedor] || 60;
+                    valDate = new Date(fabDate);
+                    valDate.setDate(valDate.getDate() + days);
+                }
+                
+                previewBox.innerHTML = `
+                    Lote Impresso: <strong style="color: var(--primary); font-family: 'JetBrains Mono', monospace;">${lote}</strong><br>
+                    Fabricação: <strong>${format(fabDate)}</strong> &bull; 
+                    Validade: <strong>${format(valDate)}</strong> (${days} dias ${isCustom ? 'personalizados' : 'padrão'})
+                `;
+            }
         }
 
         // Submete os dados para gerar o rótulo avulso
         async function generateLabel(event) {
             event.preventDefault();
             
+            const emitAllToggle = document.getElementById('emit-all-types-toggle');
+            const emit_all = emitAllToggle ? emitAllToggle.checked : false;
+            
             const select = document.getElementById('template-select');
-            const template_name = select.value;
+            const template_name = emit_all ? null : select.value;
             const data_fabricacao = document.getElementById('fab-date').value;
             
             const toggle = document.getElementById('custom-validity-toggle');
@@ -1460,6 +1534,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        emit_all,
                         template_name,
                         data_fabricacao,
                         data_validade
@@ -1478,11 +1553,32 @@
                     document.getElementById('res-tipo').textContent = resData.summary.tipo_racao;
                     document.getElementById('res-lote').textContent = resData.summary.lote;
                     document.getElementById('res-fab').textContent = resData.summary.data_fabricacao;
-                    document.getElementById('res-val').textContent = `${resData.summary.data_validade} (${resData.summary.validade_dias} dias)`;
+                    
+                    if (resData.summary.validade_dias === '-') {
+                        document.getElementById('res-val').textContent = resData.summary.data_validade;
+                    } else {
+                        document.getElementById('res-val').textContent = `${resData.summary.data_validade} (${resData.summary.validade_dias} dias)`;
+                    }
                     
                     const dlLink = document.getElementById('download-link');
                     dlLink.href = resData.download_url;
                     dlLink.setAttribute('download', resData.filename);
+                    
+                    const emailSection = document.getElementById('email-section');
+                    if (emailSection) {
+                        emailSection.style.display = 'flex';
+                        if (resData.is_zip) {
+                            dlLink.innerHTML = `
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Baixar Arquivo ZIP
+                            `;
+                        } else {
+                            dlLink.innerHTML = `
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Baixar Rótulo PDF
+                            `;
+                        }
+                    }
                     
                     resPanel.style.display = 'flex';
                     fetchLogs();

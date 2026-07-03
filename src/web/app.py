@@ -4,6 +4,9 @@ import json
 import sqlite3
 import logging
 import pandas as pd
+import tempfile
+import zipfile
+import shutil
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, send_from_directory
 
@@ -114,91 +117,199 @@ def generate_label():
     template_name = data.get('template_name')
     data_fabricacao_str = data.get('data_fabricacao') # formato YYYY-MM-DD
     custom_validade_str = data.get('data_validade') # opcional, formato YYYY-MM-DD
+    emit_all = data.get('emit_all', False)
     
-    if not template_name or not data_fabricacao_str:
-        return jsonify({"success": False, "error": "Template e Data de Fabricação são obrigatórios."}), 400
-        
-    try:
-        dt_fabricacao = datetime.strptime(data_fabricacao_str, "%Y-%m-%d")
-    except ValueError:
-        return jsonify({"success": False, "error": "Formato de data de fabricação inválido."}), 400
-        
-    options = load_templates_options()
-    selected_option = next((opt for opt in options if opt["pdf"] == template_name), None)
-    if not selected_option:
-        return jsonify({"success": False, "error": "O template selecionado não é reconhecido."}), 400
-        
-    fornecedor = selected_option["fornecedor"]
-    shelf_life_config = load_shelf_life()
-    validade_dias = shelf_life_config.get(fornecedor, 60)
-    
-    if custom_validade_str:
+    if emit_all:
+        if not data_fabricacao_str:
+            return jsonify({"success": False, "error": "A data de fabricação é obrigatória."}), 400
+            
         try:
-            dt_validade = datetime.strptime(custom_validade_str, "%Y-%m-%d")
-            if dt_validade < dt_fabricacao:
-                return jsonify({"success": False, "error": "A data de validade não pode ser anterior à data de fabricação."}), 400
-            validade_dias = (dt_validade - dt_fabricacao).days
+            dt_fabricacao = datetime.strptime(data_fabricacao_str, "%Y-%m-%d")
         except ValueError:
-            return jsonify({"success": False, "error": "Formato de data de validade inválido."}), 400
-    else:
-        dt_validade = dt_fabricacao + timedelta(days=validade_dias)
+            return jsonify({"success": False, "error": "Formato de data de fabricação inválido."}), 400
+            
+        validade_dias_customizado = None
+        if custom_validade_str:
+            try:
+                dt_validade_custom = datetime.strptime(custom_validade_str, "%Y-%m-%d")
+                if dt_validade_custom < dt_fabricacao:
+                    return jsonify({"success": False, "error": "A data de validade não pode ser anterior à data de fabricação."}), 400
+                validade_dias_customizado = (dt_validade_custom - dt_fabricacao).days
+            except ValueError:
+                return jsonify({"success": False, "error": "Formato de data de validade inválido."}), 400
+                
+        options = load_templates_options()
+        if not options:
+            return jsonify({"success": False, "error": "Nenhum template cadastrado."}), 400
+            
+        export_dir = os.path.join(root_dir, "Export/manuais")
+        os.makedirs(export_dir, exist_ok=True)
         
-    lote_impresso = dt_fabricacao.strftime("%d%m%y")
-    
-    # Define diretório de saída
-    export_dir = os.path.join(root_dir, "Export/manuais")
-    os.makedirs(export_dir, exist_ok=True)
-    
-    # Monta nome do arquivo
-    data_slug = dt_fabricacao.strftime("%d-%m-%Y")
-    base_name = template_name.replace(".pdf", "")
-    filename = f"{base_name}_FAB_{data_slug}.pdf"
-    output_path = os.path.join(export_dir, filename)
-    
-    tipo_label_completo = "Comum" if selected_option["tipo_racao"] == "CM" else "GlobalGap"
-    
-    logger.info(
-        f"Web App - Solicitada geração manual: Template={template_name}, "
-        f"Fornecedor={fornecedor}, Fase={selected_option['fase']}, Tipo={tipo_label_completo}, "
-        f"Fab={dt_fabricacao.strftime('%Y-%m-%d')}, Venc={dt_validade.strftime('%Y-%m-%d')} ({validade_dias} dias), "
-        f"Lote={lote_impresso}, Output={filename}"
-    )
-    
-    try:
-        writer = PDFLabelWriter()
-        # Ajusta shelf life temporário na instância
-        writer.shelf_life_configs[fornecedor] = validade_dias
+        temp_dir = tempfile.mkdtemp(dir=export_dir)
         
-        writer.write_label(
-            template_name=template_name,
-            data_fabricacao_raw=dt_fabricacao.strftime("%Y-%m-%d"),
-            lote=lote_impresso,
-            shelf_life_days=validade_dias,
-            output_path=output_path
+        lote_impresso = dt_fabricacao.strftime("%d%m%y")
+        data_slug = dt_fabricacao.strftime("%d-%m-%Y")
+        zip_filename = f"rotulos_todos_FAB_{data_slug}.zip"
+        zip_output_path = os.path.join(export_dir, zip_filename)
+        
+        logger.info(
+            f"Web App - Solicitada geração manual de TODOS os templates: "
+            f"Fab={dt_fabricacao.strftime('%Y-%m-%d')}, Lote={lote_impresso}, Output ZIP={zip_filename}"
         )
         
-        success_msg = f"Web App - Rótulo gerado com sucesso: {filename}"
-        logger.info(success_msg)
+        try:
+            writer = PDFLabelWriter()
+            shelf_life_config = load_shelf_life()
+            gerados_count = 0
+            
+            for opt in options:
+                t_name = opt["pdf"]
+                fornecedor = opt["fornecedor"]
+                fase = opt["fase"]
+                tipo_racao = opt["tipo_racao"]
+                
+                if validade_dias_customizado is not None:
+                    validade_dias = validade_dias_customizado
+                else:
+                    validade_dias = shelf_life_config.get(fornecedor, 60)
+                    
+                pdf_filename = f"{fornecedor}_{fase}_{tipo_racao}_FAB_{data_slug}.pdf"
+                pdf_output_path = os.path.join(temp_dir, pdf_filename)
+                
+                writer.shelf_life_configs[fornecedor] = validade_dias
+                
+                writer.write_label(
+                    template_name=t_name,
+                    data_fabricacao_raw=dt_fabricacao.strftime("%Y-%m-%d"),
+                    lote=lote_impresso,
+                    shelf_life_days=validade_dias,
+                    output_path=pdf_output_path
+                )
+                gerados_count += 1
+                
+            with zipfile.ZipFile(zip_output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for root, _, files in os.walk(temp_dir):
+                    for file in files:
+                        if file.endswith('.pdf'):
+                            file_path = os.path.join(root, file)
+                            zipf.write(file_path, arcname=file)
+                            
+            logger.info(f"Web App - ZIP de todos os rótulos gerado com sucesso contendo {gerados_count} PDFs: {zip_filename}")
+            
+            if validade_dias_customizado is not None:
+                res_validade = dt_validade_custom.strftime("%d/%m/%Y")
+                res_validade_dias = validade_dias_customizado
+            else:
+                res_validade = "Padrão de cada fabricante"
+                res_validade_dias = "-"
+                
+            return jsonify({
+                "success": True,
+                "filename": zip_filename,
+                "download_url": f"/download/{zip_filename}",
+                "is_zip": True,
+                "summary": {
+                    "fornecedor": "TODOS",
+                    "fase": "TODAS",
+                    "tipo_racao": "TODAS",
+                    "template": "Vários (ZIP)",
+                    "data_fabricacao": dt_fabricacao.strftime("%d/%m/%Y"),
+                    "data_validade": res_validade,
+                    "validade_dias": res_validade_dias,
+                    "lote": lote_impresso
+                }
+            })
+            
+        except Exception as e:
+            error_msg = f"Web App - Erro ao gerar todos os rótulos: {e}"
+            logger.error(error_msg, exc_info=True)
+            return jsonify({"success": False, "error": str(e)}), 500
+        finally:
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
+                
+    else:
+        if not template_name or not data_fabricacao_str:
+            return jsonify({"success": False, "error": "Template e Data de Fabricação são obrigatórios."}), 400
+            
+        try:
+            dt_fabricacao = datetime.strptime(data_fabricacao_str, "%Y-%m-%d")
+        except ValueError:
+            return jsonify({"success": False, "error": "Formato de data de fabricação inválido."}), 400
+            
+        options = load_templates_options()
+        selected_option = next((opt for opt in options if opt["pdf"] == template_name), None)
+        if not selected_option:
+            return jsonify({"success": False, "error": "O template selecionado não é reconhecido."}), 400
+            
+        fornecedor = selected_option["fornecedor"]
+        shelf_life_config = load_shelf_life()
+        validade_dias = shelf_life_config.get(fornecedor, 60)
         
-        return jsonify({
-            "success": True,
-            "filename": filename,
-            "download_url": f"/download/{filename}",
-            "summary": {
-                "fornecedor": fornecedor,
-                "fase": selected_option["fase"],
-                "tipo_racao": tipo_label_completo,
-                "template": template_name,
-                "data_fabricacao": dt_fabricacao.strftime("%d/%m/%Y"),
-                "data_validade": dt_validade.strftime("%d/%m/%Y"),
-                "validade_dias": validade_dias,
-                "lote": lote_impresso
-            }
-        })
-    except Exception as e:
-        error_msg = f"Web App - Erro ao preencher rótulo: {e}"
-        logger.error(error_msg, exc_info=True)
-        return jsonify({"success": False, "error": str(e)}), 500
+        if custom_validade_str:
+            try:
+                dt_validade = datetime.strptime(custom_validade_str, "%Y-%m-%d")
+                if dt_validade < dt_fabricacao:
+                    return jsonify({"success": False, "error": "A data de validade não pode ser anterior à data de fabricação."}), 400
+                validade_dias = (dt_validade - dt_fabricacao).days
+            except ValueError:
+                return jsonify({"success": False, "error": "Formato de data de validade inválido."}), 400
+        else:
+            dt_validade = dt_fabricacao + timedelta(days=validade_dias)
+            
+        lote_impresso = dt_fabricacao.strftime("%d%m%y")
+        
+        export_dir = os.path.join(root_dir, "Export/manuais")
+        os.makedirs(export_dir, exist_ok=True)
+        
+        data_slug = dt_fabricacao.strftime("%d-%m-%Y")
+        base_name = template_name.replace(".pdf", "")
+        filename = f"{base_name}_FAB_{data_slug}.pdf"
+        output_path = os.path.join(export_dir, filename)
+        
+        tipo_label_completo = "Comum" if selected_option["tipo_racao"] == "CM" else "GlobalGap"
+        
+        logger.info(
+            f"Web App - Solicitada geração manual: Template={template_name}, "
+            f"Fornecedor={fornecedor}, Fase={selected_option['fase']}, Tipo={tipo_label_completo}, "
+            f"Fab={dt_fabricacao.strftime('%Y-%m-%d')}, Venc={dt_validade.strftime('%Y-%m-%d')} ({validade_dias} dias), "
+            f"Lote={lote_impresso}, Output={filename}"
+        )
+        
+        try:
+            writer = PDFLabelWriter()
+            writer.shelf_life_configs[fornecedor] = validade_dias
+            
+            writer.write_label(
+                template_name=template_name,
+                data_fabricacao_raw=dt_fabricacao.strftime("%Y-%m-%d"),
+                lote=lote_impresso,
+                shelf_life_days=validade_dias,
+                output_path=output_path
+            )
+            
+            success_msg = f"Web App - Rótulo gerado com sucesso: {filename}"
+            logger.info(success_msg)
+            
+            return jsonify({
+                "success": True,
+                "filename": filename,
+                "download_url": f"/download/{filename}",
+                "summary": {
+                    "fornecedor": fornecedor,
+                    "fase": selected_option["fase"],
+                    "tipo_racao": tipo_label_completo,
+                    "template": template_name,
+                    "data_fabricacao": dt_fabricacao.strftime("%d/%m/%Y"),
+                    "data_validade": dt_validade.strftime("%d/%m/%Y"),
+                    "validade_dias": validade_dias,
+                    "lote": lote_impresso
+                }
+            })
+        except Exception as e:
+            error_msg = f"Web App - Erro ao preencher rótulo: {e}"
+            logger.error(error_msg, exc_info=True)
+            return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/download/<filename>')
 def download_file(filename):
