@@ -14,8 +14,8 @@ O sistema baseia-se em um pipeline de ETL integrado que extrai transações de e
 1.  **Camada de Dados**: SQLite (`data/processed/entregas_processadas.db`) e Pandas.
 2.  **Camada de PDF**: ReportLab para gerar o canvas overlay de texto e pypdf para mesclar com o PDF original do template.
 3.  **Mapeamento**:
-    *   [templates.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/templates.json): Coordenadas (X, Y) e alinhamentos de texto para cada arquivo de template físico.
-    *   [shelf_life.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/shelf_life.json): Shelf-life padrão por fabricante de ração.
+    *   [templates.json](file:///home/bruno/Documentos/1_C.VALE/2%20-%20PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/config/templates.json): Coordenadas (X, Y) e alinhamentos de texto para cada arquivo de template físico.
+    *   [shelf_life.json](file:///home/bruno/Documentos/1_C.VALE/2%20-%20PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/config/shelf_life.json): Shelf-life padrão por fabricante de ração.
 4.  **Regras de ETL e Consistência**:
     *   **Normalização de Lote composto**: `FazendaLote` é normalizado para o formato `{fazenda}-{lote}` sem zeros à esquerda (ex: `1342-5`), garantindo correspondência exata entre planilhas operacionais e de auditoria.
     *   **Filtragem de Inversões de Fase (Sobras)**: Cargas entregues com fase tardia antes de fases mais jovens no mesmo lote (ex: `3_INICIAL2` ou `5_ABATE` antes de `1_PREINICIAL`) são filtradas e descartadas como sobras do lote anterior.
@@ -72,3 +72,33 @@ Para testar a conexão SMTP do `.env` e enviar um e-mail de teste no console int
 ```bash
 PYTHONPATH=. venv/bin/python3 scripts/test_smtp.py
 ```
+
+## 🖥️ Administração do Ambiente de Produção
+
+### 1. Acesso SSH ao Host (Alpine Linux)
+*   **Acesso Local (na LAN)**:
+    ```bash
+    ssh peixe
+    ```
+*   **Acesso Remoto (via Tailscale)**:
+    ```bash
+    ssh peixe-remoto
+    ```
+    *(Nota: A chave pública está salva no host remoto permitindo conexão sem senha para o usuário `root` no IP `100.74.64.89`)*
+
+### 2. Gerenciamento do Serviço do Portal Web (OpenRC)
+O portal é gerenciado como um serviço do OpenRC chamado `labelreprint`.
+*   **Verificar Status**:
+    ```bash
+    ssh peixe-remoto "rc-service labelreprint status"
+    ```
+*   **Reiniciar o Serviço**:
+    ```bash
+    ssh peixe-remoto "rc-service labelreprint restart"
+    ```
+*   **Tratamento de Falhas (Processo Órfão / Estado Crashed)**:
+    Se o reinício falhar devido a processos Flask que se recusam a encerrar (erro `start-stop-daemon: 1 process refused to stop`), limpe o estado do OpenRC e force a reinicialização:
+    ```bash
+    ssh peixe-remoto "pkill -9 -f 'run_webserver.py' && rc-service labelreprint zap && rc-service labelreprint start"
+    ```
+
