@@ -17,17 +17,17 @@ log_message() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
 }
 
-# Verifica se o webserver está respondendo na porta 5000
+# Verifica se o webserver está respondendo na porta 5001
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "$URL" || echo "000")
 
 if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 302 ]; then
-    # Opcional: descomente a linha abaixo para registrar logs de sucesso
+    # Opcional: registrar logs de sucesso para acompanhamento se necessário
     # log_message "OK - Portal Web respondendo na porta $PORT (Status: $HTTP_STATUS)"
     exit 0
 else
     log_message "ALERTA - Portal Web inativo ou lento (HTTP Status: $HTTP_STATUS). Iniciando recuperação..."
     
-    # 1. Tentativa de reinicialização via OpenRC (se rodar como root)
+    # 1. Tentativa de reinicialização via OpenRC (se rodar como root/sudo)
     if [ "$EUID" -eq 0 ]; then
         log_message "Tentando reiniciar via OpenRC (rc-service)..."
         rc-service labelreprint restart >> "$LOG_FILE" 2>&1
@@ -45,7 +45,10 @@ else
     
     # 2. Fallback de reinicialização direta (caso rode como usuário comum ou OpenRC falhar)
     log_message "Buscando processos Python órfãos na porta $PORT para limpar..."
-    PID=$(lsof -t -i:$PORT || netstat -lntp 2>/dev/null | grep ":$PORT" | awk '{print $7}' | cut -d/ -f1 || true)
+    
+    # Detecção robusta do PID no Alpine Linux (evita problemas com lsof do busybox)
+    PID=$(netstat -lntp 2>/dev/null | grep -E ":$PORT " | awk '{print $7}' | cut -d/ -f1 | grep -E '^[0-9]+$' || true)
+    
     if [ -n "$PID" ]; then
         log_message "Matando processo antigo PID $PID..."
         kill -9 "$PID" 2>/dev/null || true
