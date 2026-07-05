@@ -91,6 +91,12 @@ def load_shelf_life():
 def index():
     return render_template('index.html')
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'images/logo_cvale.jpeg', mimetype='image/jpeg')
+
+
 @app.route('/api/templates')
 def get_templates():
     options = load_templates_options()
