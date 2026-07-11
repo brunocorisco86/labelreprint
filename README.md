@@ -143,3 +143,16 @@ Caso queira rodar o pipeline em lote de forma segmentada para todos os lotes que
 *   **[src/pdf/writer.py](file:///home/bruno/Documentos/1_C.VALE/2 - PROJETOS/10_ROTULOS_REIMPRESSAO/labelreprint/src/pdf/writer.py)**: Engine geométrica de preenchimento textual no PDF original (ReportLab).
 *   **[config/](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config)**: Configurações de campos ([templates.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/templates.json)), fallbacks ([template_resolver.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/template_resolver.json)) e validades padrão ([shelf_life.json](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/config/shelf_life.json)).
 *   **[docs/mer.md](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/docs/mer.md)**: Diagrama lógico e especificação física do modelo de dados (Star Schema).
+
+---
+
+## 🔍 Auditoria e Grafo de Conhecimento (Graphify)
+
+O repositório possui uma base de conhecimento estruturada e mapeada sob a pasta `graphify-out/` para auditoria, compreensão arquitetural e navegação de dependências:
+
+*   **[graphify-out/graph.html](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/graphify-out/graph.html)**: Grafo de conhecimento interativo da base de código. Abra este arquivo diretamente em qualquer navegador web para explorar visualmente as conexões estruturais, fluxos e comunidades identificadas.
+*   **[graphify-out/GRAPH_REPORT.md](file:///home/brunoconter/Documentos/1_C.VALE/2%20-%20PROJETOS/10_REIMPRESSAO_ROTULOS/graphify-out/GRAPH_REPORT.md)**: Relatório de auditoria gerado automaticamente listando os *God Nodes* (nós de alta centralidade como `BatchGenerator` e `PDFLabelWriter`), conexões surpreendentes/indiretas, e métricas de coesão das comunidades.
+*   **Consulta por Terminal**: Você pode realizar buscas semânticas e rastreamento de caminhos de código rodando:
+    ```bash
+    graphify query "<pergunta ou símbolo>"
+    ```
