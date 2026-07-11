@@ -331,8 +331,8 @@ def get_nucleos():
         
     conn = sqlite3.connect(DATABASE_PATH)
     try:
-        df_nucleos = pd.read_sql("SELECT DISTINCT Núcleo FROM FiltroMissaoEuropa WHERE Núcleo IS NOT NULL ORDER BY Núcleo", conn)
-        return jsonify(df_nucleos["Núcleo"].tolist())
+        df_nucleos = pd.read_sql("SELECT DISTINCT R.Nucleo FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo IS NOT NULL ORDER BY R.Nucleo", conn)
+        return jsonify(df_nucleos["Nucleo"].tolist())
     except Exception as e:
         logger.error(f"Erro ao buscar núcleos no SQLite: {e}")
         return jsonify({"error": str(e)}), 500
@@ -348,7 +348,7 @@ def get_nucleo_lotes(nucleo_id):
     try:
         # Busca lotes do núcleo
         df_lotes = pd.read_sql(
-            "SELECT DISTINCT FazendaLote, [Nome Aviário] FROM FiltroMissaoEuropa WHERE Núcleo = ? AND FazendaLote IS NOT NULL", 
+            "SELECT DISTINCT F.FazendaLote, R.NomeFazenda AS [Nome Aviário] FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo = ? AND F.FazendaLote IS NOT NULL", 
             conn, 
             params=(nucleo_id,)
         )
@@ -396,7 +396,7 @@ def generate_nucleo_labels():
     conn = sqlite3.connect(DATABASE_PATH)
     try:
         df_lotes = pd.read_sql(
-            "SELECT DISTINCT FazendaLote FROM FiltroMissaoEuropa WHERE Núcleo = ? AND FazendaLote IS NOT NULL", 
+            "SELECT DISTINCT F.FazendaLote FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo = ? AND F.FazendaLote IS NOT NULL", 
             conn, 
             params=(nucleo_id,)
         )
@@ -559,7 +559,7 @@ def get_produtores():
     conn = sqlite3.connect(DATABASE_PATH)
     try:
         df_produtores = pd.read_sql(
-            "SELECT DISTINCT [Nome Aviário] as nome FROM FiltroMissaoEuropa WHERE [Nome Aviário] IS NOT NULL ORDER BY [Nome Aviário]", 
+            "SELECT DISTINCT R.NomeFazenda as nome FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.NomeFazenda IS NOT NULL ORDER BY R.NomeFazenda", 
             conn
         )
         return jsonify(df_produtores["nome"].tolist())
@@ -581,7 +581,7 @@ def get_produtores_lotes():
     conn = sqlite3.connect(DATABASE_PATH)
     try:
         df_lotes = pd.read_sql(
-            "SELECT DISTINCT FazendaLote FROM FiltroMissaoEuropa WHERE [Nome Aviário] = ? AND FazendaLote IS NOT NULL ORDER BY FazendaLote", 
+            "SELECT DISTINCT F.FazendaLote FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.NomeFazenda = ? AND F.FazendaLote IS NOT NULL ORDER BY F.FazendaLote", 
             conn, 
             params=(produtor,)
         )
@@ -613,9 +613,9 @@ def get_sumario():
         
         if not row:
             # Caso não tenha entregas reais (pode ser lote inativo ou fora de ordem omitido)
-            # Vamos buscar os dados mínimos no FiltroMissaoEuropa para informar o usuário
+            # Vamos buscar os dados mínimos no Regioes / FiltroLotesAtivos para informar o usuário
             cursor.execute(
-                "SELECT Extensionista, [Nome Aviário] FROM FiltroMissaoEuropa WHERE FazendaLote = ? LIMIT 1",
+                "SELECT R.Extensionista, R.NomeFazenda AS [Nome Aviário] FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE F.FazendaLote = ? LIMIT 1",
                 (fazenda_lote,)
             )
             row_europa = cursor.fetchone()

@@ -33,8 +33,8 @@ def get_nucleos():
         
     conn = sqlite3.connect(DATABASE_PATH)
     try:
-        df_nucleos = pd.read_sql("SELECT DISTINCT Núcleo FROM FiltroMissaoEuropa WHERE Núcleo IS NOT NULL ORDER BY Núcleo", conn)
-        return df_nucleos["Núcleo"].tolist()
+        df_nucleos = pd.read_sql("SELECT DISTINCT R.Nucleo FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo IS NOT NULL ORDER BY R.Nucleo", conn)
+        return df_nucleos["Nucleo"].tolist()
     except Exception as e:
         print(f"Erro ao consultar núcleos: {e}")
         sys.exit(1)
@@ -46,7 +46,7 @@ def get_lotes_by_nucleo(nucleo):
     try:
         # Busca os lotes vinculados a esse núcleo
         df_lotes = pd.read_sql(
-            "SELECT DISTINCT FazendaLote, [Nome Aviário] FROM FiltroMissaoEuropa WHERE Núcleo = ? AND FazendaLote IS NOT NULL", 
+            "SELECT DISTINCT F.FazendaLote, R.NomeFazenda AS [Nome Aviário] FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo = ? AND F.FazendaLote IS NOT NULL", 
             conn, 
             params=(nucleo,)
         )

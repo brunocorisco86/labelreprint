@@ -190,13 +190,7 @@ class DataManager:
         df_filtro['DataAbate'] = pd.to_datetime(df_filtro['DataAbate']).dt.strftime('%Y-%m-%d')
         df_filtro['LoteAbatido'] = df_filtro['LoteAbatido'].astype(int)
 
-        # 2.1. Carregar Filtro Missão Europa (Auditoria)
-        europa_file = os.path.join(self.raw_dir, "FiltroMissaoEuropa/FiltroMissaoEuropa.xlsx")
-        print(f"[ETL] Lendo Filtro Missão Europa de: {europa_file}")
-        df_europa = pd.read_excel(europa_file)
-        df_europa['FazendaLote'] = (df_europa['Aviário'].astype(str) + '-' + df_europa['Lote'].astype(str)).apply(self.normalize_fazenda_lote)
-        if 'Dia do Aloj' in df_europa.columns:
-            df_europa['Dia do Aloj'] = pd.to_datetime(df_europa['Dia do Aloj']).dt.strftime('%Y-%m-%d')
+
         
         # 3. Carregar Fazendas
         fazendas_file = os.path.join(self.raw_dir, "ListagemGeralFazendas/ListagemGeralFazendas.xlsx")
@@ -285,12 +279,12 @@ class DataManager:
         # Extrair Lote
         df_entregas['Lote'] = df_entregas['FazendaLote'].apply(self.extract_lote)
         
-        # Filtrar apenas entregas que constem na planilha FiltroMissaoEuropa (auditoria)
-        lotes_europa = df_europa['FazendaLote'].tolist()
+        # Filtrar apenas entregas que constem na planilha FiltroLotesAtivos
+        lotes_ativos = df_filtro['FazendaLote'].tolist()
         antes_filtro_lotes = len(df_entregas)
-        df_entregas = df_entregas[df_entregas['FazendaLote'].isin(lotes_europa)].reset_index(drop=True)
+        df_entregas = df_entregas[df_entregas['FazendaLote'].isin(lotes_ativos)].reset_index(drop=True)
         depois_filtro_lotes = len(df_entregas)
-        print(f"[ETL] Filtradas {antes_filtro_lotes - depois_filtro_lotes} entregas que não constam no FiltroMissaoEuropa. Mantidas {depois_filtro_lotes} entregas.")
+        print(f"[ETL] Filtradas {antes_filtro_lotes - depois_filtro_lotes} entregas que não constam no FiltroLotesAtivos. Mantidas {depois_filtro_lotes} entregas.")
         
         # Extrair Fase Ração
         df_entregas['FaseRacao'] = df_entregas['NomeFormula'].apply(self.extract_fase_racao)
@@ -415,9 +409,7 @@ class DataManager:
             df_filtro.to_sql("FiltroLotesAtivos", conn, if_exists="replace", index=False)
             print("[ETL] Tabela FiltroLotesAtivos salva com sucesso no SQLite.")
             
-            # Salvar tabela dimensão de FiltroMissaoEuropa
-            df_europa.to_sql("FiltroMissaoEuropa", conn, if_exists="replace", index=False)
-            print("[ETL] Tabela FiltroMissaoEuropa salva com sucesso no SQLite.")
+
             
             print("[ETL] ETL executado com sucesso e tabelas criadas no banco de dados!")
         finally:
