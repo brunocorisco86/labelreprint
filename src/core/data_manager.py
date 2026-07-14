@@ -35,8 +35,9 @@ class DataManager:
             else:
                 self.raw_dir = os.path.join(PROJECT_ROOT, "data/templates")
         
-        # Inicializa a tabela de Telegram
+        # Inicializa as tabelas de Telegram e e-mails salvos
         self.init_telegram_table()
+        self.init_saved_emails_table()
 
     def get_connection(self):
         return sqlite3.connect(self.db_path)
@@ -471,6 +472,80 @@ class DataManager:
             return False
         finally:
             conn.close()
+
+    def init_saved_emails_table(self):
+        """Inicializa a tabela DestinatariosSalvos no SQLite para armazenar e-mails de destinatários"""
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS DestinatariosSalvos (
+                    email TEXT PRIMARY KEY,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+        except Exception as e:
+            print(f"[DataManager] Erro ao inicializar tabela DestinatariosSalvos: {e}")
+        finally:
+            conn.close()
+
+    def get_saved_emails(self):
+        """Retorna a lista de todos os e-mails salvos na base de dados"""
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT email FROM DestinatariosSalvos ORDER BY email")
+            rows = cursor.fetchall()
+            return [row[0] for row in rows]
+        except Exception as e:
+            print(f"[DataManager] Erro ao buscar e-mails salvos: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def save_saved_email(self, email):
+        """Salva um e-mail de destinatário na base se for novo"""
+        if not email:
+            return False
+        email_clean = email.strip().lower()
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT OR IGNORE INTO DestinatariosSalvos (email)
+                VALUES (?)
+            """, (email_clean,))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"[DataManager] Erro ao salvar e-mail destinatário: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def migrate_emails_from_json(self, json_path):
+        """Migra os e-mails de um arquivo JSON para o SQLite"""
+        if not os.path.exists(json_path):
+            return False
+            
+        import json
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                emails = json.load(f)
+                
+            if not isinstance(emails, list):
+                return False
+                
+            migrados = 0
+            for email in emails:
+                if self.save_saved_email(email):
+                    migrados += 1
+            print(f"[DataManager] Migrados {migrados} e-mails do arquivo JSON para o SQLite.")
+            return True
+        except Exception as e:
+            print(f"[DataManager] Erro ao migrar e-mails do JSON: {e}")
+            return False
 
 if __name__ == "__main__":
     manager = DataManager()

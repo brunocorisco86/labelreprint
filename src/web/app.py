@@ -15,13 +15,23 @@ root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
+DATABASE_PATH = os.getenv("DATABASE_PATH", os.path.join(root_dir, "data/processed/entregas_processadas.db"))
+
 from src.pdf.writer import PDFLabelWriter
 from src.core.email_sender import EmailSender
 from src.core.data_manager import DataManager
 
-# Inicializa o DataManager para garantir a criação das tabelas (incluindo Telegram)
+# Inicializa o DataManager e executa a migração de e-mails do JSON para o SQLite se necessário
 try:
-    DataManager(db_path=DATABASE_PATH)
+    manager = DataManager(db_path=DATABASE_PATH)
+    EMAILS_JSON_PATH = os.path.join(root_dir, "config/destinatarios_salvos.json")
+    if os.path.exists(EMAILS_JSON_PATH):
+        try:
+            if manager.migrate_emails_from_json(EMAILS_JSON_PATH):
+                os.rename(EMAILS_JSON_PATH, EMAILS_JSON_PATH + ".bak")
+                print(f"[Startup] Migração concluída. JSON renomeado para {EMAILS_JSON_PATH}.bak")
+        except Exception as e:
+            print(f"[Startup] Erro ao migrar e-mails do JSON no startup: {e}")
 except Exception as e:
     print(f"Erro ao inicializar DataManager no Flask app startup: {e}")
 
@@ -31,8 +41,6 @@ app = Flask(__name__)
 LOGS_DIR = os.path.join(root_dir, "logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOGS_DIR, "geracao_manual.log")
-
-DATABASE_PATH = os.getenv("DATABASE_PATH", os.path.join(root_dir, "data/processed/entregas_processadas.db"))
 
 logger = logging.getLogger("geracao_manual")
 logger.setLevel(logging.INFO)
@@ -441,45 +449,30 @@ def generate_nucleo_labels():
 
 # ----------------- ROTA DE ENVIO DE E-MAIL E DESTINATÁRIOS -----------------
 
-EMAILS_JSON_PATH = os.path.join(root_dir, "config/destinatarios_salvos.json")
-
 def load_saved_emails():
-    os.makedirs(os.path.dirname(EMAILS_JSON_PATH), exist_ok=True)
     default_emails = ["bruno.conter@cvale.com.br", "vinicius.duarte@cvale.com.br"]
-    
-    if not os.path.exists(EMAILS_JSON_PATH):
-        try:
-            with open(EMAILS_JSON_PATH, "w", encoding="utf-8") as f:
-                json.dump(default_emails, f, ensure_ascii=False, indent=4)
-            return default_emails
-        except Exception as e:
-            logger.error(f"Erro ao criar arquivo de e-mails padrão: {e}")
-            return default_emails
-            
     try:
-        with open(EMAILS_JSON_PATH, "r", encoding="utf-8") as f:
-            emails = json.load(f)
-            # Garante que os e-mails padrão sempre existam
-            for de in default_emails:
-                if de not in emails:
-                    emails.append(de)
-            return emails
+        manager = DataManager(db_path=DATABASE_PATH)
+        emails = manager.get_saved_emails()
+        # Garante que os e-mails padrão sempre existam e os salva na base se não estiverem lá
+        for de in default_emails:
+            if de not in emails:
+                manager.save_saved_email(de)
+                emails.append(de)
+        return sorted(emails)
     except Exception as e:
-        logger.error(f"Erro ao ler e-mails salvos: {e}")
+        logger.error(f"Erro ao ler e-mails salvos da base de dados: {e}")
         return default_emails
 
 def save_email(email):
     if not email:
         return
     email = email.strip().lower()
-    emails = load_saved_emails()
-    if email not in emails:
-        emails.append(email)
-        try:
-            with open(EMAILS_JSON_PATH, "w", encoding="utf-8") as f:
-                json.dump(emails, f, ensure_ascii=False, indent=4)
-        except Exception as e:
-            logger.error(f"Erro ao salvar novo e-mail no JSON: {e}")
+    try:
+        manager = DataManager(db_path=DATABASE_PATH)
+        manager.save_saved_email(email)
+    except Exception as e:
+        logger.error(f"Erro ao salvar novo e-mail na base de dados: {e}")
 
 @app.route('/api/emails')
 def get_emails():
