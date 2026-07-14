@@ -51,7 +51,7 @@ else
 
     
     # Executa o bot em background usando o venv redirecionando stdout e stderr para o log
-    nohup venv/bin/python3 scripts/run_telegram_bot.py >> "$LOG_FILE" 2>&1 &
+    nohup venv/bin/python3 -u scripts/run_telegram_bot.py >> "$LOG_FILE" 2>&1 &
     echo $! > "$PID_FILE"
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Watchdog: Bot iniciado com PID $(cat $PID_FILE)." >> "$LOG_FILE"
 fi
