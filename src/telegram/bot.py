@@ -43,7 +43,6 @@ def get_cancel_keyboard():
     builder.button(text="❌ Cancelar e Sair", callback_data="cancel_operation")
     return builder.as_markup()
 
-@logger.bind()
 class TelegramInterfaceBot:
     def __init__(self):
         if not TELEGRAM_BOT_TOKEN or "seu_token" in TELEGRAM_BOT_TOKEN:
