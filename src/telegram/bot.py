@@ -327,7 +327,8 @@ class TelegramInterfaceBot:
                     
                     builder = InlineKeyboardBuilder()
                     builder.button(text=f"✉️ Sim, enviar para {saved_email}", callback_data="email_confirm_yes")
-                    builder.button(text="✏️ Ajustar e-mail cadastrado", callback_data="email_confirm_no")
+                    builder.button(text="✏️ Ajustar e-mail cadastrado", callback_data="email_confirm_adjust")
+                    builder.button(text="📧 Enviar para outro e-mail (efêmero)", callback_data="email_confirm_temporary")
                     builder.button(text="❌ Cancelar", callback_data="cancel_operation")
                     builder.adjust(1)
                     
@@ -353,11 +354,32 @@ class TelegramInterfaceBot:
 
     async def ask_for_new_email(self, message: types.Message, state: FSMContext):
         """Pede para o usuário digitar o e-mail."""
+        state_data = await state.get_data()
+        save_to_db = state_data.get("save_to_db", True)
+        
+        if save_to_db is False:
+            texto = (
+                "📧 *E-mail de Destino (Efêmero)*:\n"
+                "Você escolheu enviar para outro e-mail apenas desta vez (seu cadastro permanecerá inalterado).\n\n"
+                "Por favor, digite o e-mail de destino:"
+            )
+        elif "email" in state_data:
+            texto = (
+                "✏️ *Ajustar E-mail Cadastrado*:\n"
+                "Você escolheu atualizar seu e-mail cadastrado de forma permanente.\n\n"
+                "Por favor, digite o seu novo e-mail:"
+            )
+        else:
+            await state.update_data(save_to_db=True)
+            texto = (
+                "📧 *E-mail de Destino*:\n"
+                "Não localizamos um e-mail padrão para o seu ID do Telegram.\n\n"
+                "Por favor, digite o e-mail para onde o rótulo deve ser enviado:"
+            )
+            
         await state.set_state(LabelReprintForm.typing_email)
         await message.answer(
-            "📧 *E-mail de Destino*:\n"
-            "Não localizamos um e-mail padrão para o seu ID do Telegram.\n\n"
-            "Por favor, digite o e-mail para onde o rótulo deve ser enviado:",
+            texto,
             reply_markup=get_cancel_keyboard(),
             parse_mode=ParseMode.MARKDOWN
         )
@@ -370,9 +392,18 @@ class TelegramInterfaceBot:
         if choice == "email_confirm_yes":
             # Vai direto para a tela de confirmação de geração
             await self.show_final_confirmation(callback_query.message, state)
-        else:
-            # Pede outro e-mail
+        elif choice == "email_confirm_adjust":
+            # Pede novo e-mail e ativa flag para salvar na base de dados
+            await state.update_data(save_to_db=True)
             await self.ask_for_new_email(callback_query.message, state)
+        elif choice == "email_confirm_temporary":
+            # Pede novo e-mail e desativa flag de salvar na base de dados (efêmero)
+            await state.update_data(save_to_db=False)
+            await self.ask_for_new_email(callback_query.message, state)
+        else:
+            # Cancelar ou outro callback
+            await state.clear()
+            await callback_query.message.edit_text("❌ Operação cancelada.")
 
     async def process_typed_email(self, message: types.Message, state: FSMContext):
         """Processa e valida o e-mail digitado pelo usuário."""
@@ -388,29 +419,36 @@ class TelegramInterfaceBot:
             )
             return
             
-        # Salva o e-mail na base de dados (SQLite) via API Flask de forma assíncrona
-        telegram_id = message.chat.id
-        username = message.from_user.username
+        # Verifica se deve salvar na base de dados (SQLite)
+        state_data = await state.get_data()
+        save_to_db = state_data.get("save_to_db", True)
         
-        await message.answer("💾 Salvando associação de e-mail na base de dados...")
-        
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                save_res = await client.post(
-                    f"{BACKEND_URL}/api/telegram/user",
-                    json={
-                        "telegram_id": telegram_id,
-                        "email": email,
-                        "username": username
-                    }
-                )
-                
-            if save_res.status_code == 200 and save_res.json().get("success"):
-                logger.info(f"Telegram ID {telegram_id} associado com sucesso ao e-mail {email}")
-            else:
-                logger.warning(f"Não foi possível persistir e-mail na MER para o telegram ID {telegram_id}: {save_res.text}")
-        except Exception as e:
-            logger.error(f"Erro de conexão ao salvar e-mail do telegram {telegram_id} na base: {e}")
+        if save_to_db:
+            telegram_id = message.chat.id
+            username = message.from_user.username
+            
+            await message.answer("💾 Salvando associação de e-mail na base de dados...")
+            
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    save_res = await client.post(
+                        f"{BACKEND_URL}/api/telegram/user",
+                        json={
+                            "telegram_id": telegram_id,
+                            "email": email,
+                            "username": username
+                        }
+                    )
+                    
+                if save_res.status_code == 200 and save_res.json().get("success"):
+                    logger.info(f"Telegram ID {telegram_id} associado com sucesso ao e-mail {email}")
+                    await message.answer("✅ Cadastro de e-mail atualizado com sucesso!")
+                else:
+                    logger.warning(f"Não foi possível persistir e-mail na MER para o telegram ID {telegram_id}: {save_res.text}")
+            except Exception as e:
+                logger.error(f"Erro de conexão ao salvar e-mail do telegram {telegram_id} na base: {e}")
+        else:
+            await message.answer("📧 E-mail temporário (efêmero) configurado para este envio.")
 
         await state.update_data(email=email)
         await self.show_final_confirmation(message, state)
