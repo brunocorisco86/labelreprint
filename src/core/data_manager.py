@@ -34,6 +34,9 @@ class DataManager:
                 self.raw_dir = default_raw_dir
             else:
                 self.raw_dir = os.path.join(PROJECT_ROOT, "data/templates")
+        
+        # Inicializa a tabela de Telegram
+        self.init_telegram_table()
 
     def get_connection(self):
         return sqlite3.connect(self.db_path)
@@ -412,6 +415,60 @@ class DataManager:
 
             
             print("[ETL] ETL executado com sucesso e tabelas criadas no banco de dados!")
+        finally:
+            conn.close()
+
+    def init_telegram_table(self):
+        """Inicializa a tabela UsuariosTelegram no SQLite para associar telegram_id e emails"""
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS UsuariosTelegram (
+                    telegram_id INTEGER PRIMARY KEY,
+                    email TEXT NOT NULL,
+                    username TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+        except Exception as e:
+            print(f"[DataManager] Erro ao inicializar tabela de Telegram: {e}")
+        finally:
+            conn.close()
+
+    def get_telegram_user(self, telegram_id):
+        """Retorna o e-mail cadastrado para o telegram_id ou None"""
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT email FROM UsuariosTelegram WHERE telegram_id = ?", (telegram_id,))
+            row = cursor.fetchone()
+            return row[0] if row else None
+        except Exception as e:
+            print(f"[DataManager] Erro ao buscar usuário do Telegram: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def save_telegram_user(self, telegram_id, email, username=None):
+        """Salva ou atualiza a associação telegram_id -> email"""
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO UsuariosTelegram (telegram_id, email, username, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(telegram_id) DO UPDATE SET
+                    email = excluded.email,
+                    username = excluded.username,
+                    updated_at = CURRENT_TIMESTAMP
+            """, (telegram_id, email.strip().lower(), username))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"[DataManager] Erro ao salvar usuário do Telegram: {e}")
+            return False
         finally:
             conn.close()
 

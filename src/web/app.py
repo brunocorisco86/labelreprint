@@ -17,6 +17,13 @@ if root_dir not in sys.path:
 
 from src.pdf.writer import PDFLabelWriter
 from src.core.email_sender import EmailSender
+from src.core.data_manager import DataManager
+
+# Inicializa o DataManager para garantir a criação das tabelas (incluindo Telegram)
+try:
+    DataManager(db_path=DATABASE_PATH)
+except Exception as e:
+    print(f"Erro ao inicializar DataManager no Flask app startup: {e}")
 
 app = Flask(__name__)
 
@@ -679,5 +686,40 @@ def get_sumario():
     finally:
         conn.close()
 
+# ----------------- ENDPOINTS DE INTEGRAÇÃO TELEGRAM -----------------
+
+@app.route('/api/telegram/user/<int:telegram_id>')
+def get_telegram_user(telegram_id):
+    try:
+        manager = DataManager(db_path=DATABASE_PATH)
+        email = manager.get_telegram_user(telegram_id)
+        return jsonify({"telegram_id": telegram_id, "email": email})
+    except Exception as e:
+        logger.error(f"Erro ao consultar usuário do Telegram {telegram_id}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/telegram/user', methods=['POST'])
+def save_telegram_user():
+    data = request.json
+    if not data:
+        return jsonify({"success": False, "error": "JSON body é obrigatório."}), 400
+        
+    telegram_id = data.get('telegram_id')
+    email = data.get('email')
+    username = data.get('username')
+    
+    if not telegram_id or not email:
+        return jsonify({"success": False, "error": "telegram_id e email são obrigatórios."}), 400
+        
+    try:
+        manager = DataManager(db_path=DATABASE_PATH)
+        success = manager.save_telegram_user(telegram_id, email, username)
+        return jsonify({"success": success})
+    except Exception as e:
+        logger.error(f"Erro ao salvar usuário do Telegram {telegram_id}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    # Permite passar a porta por variável de ambiente para flexibilidade no Homelab
+    port = int(os.getenv("PORT", 5001))
+    app.run(host="0.0.0.0", port=port, debug=True)
