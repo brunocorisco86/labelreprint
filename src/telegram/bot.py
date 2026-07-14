@@ -188,7 +188,7 @@ class TelegramInterfaceBot:
             builder.button(text="❌ Cancelar", callback_data="cancel_operation")
             builder.adjust(1)
             
-            await LabelReprintForm.choosing_label.set()
+            await state.set_state(LabelReprintForm.choosing_label)
             await message.answer(
                 "📋 *Selecione qual rótulo você deseja gerar e imprimir*:",
                 reply_markup=builder.as_markup(),
@@ -239,7 +239,7 @@ class TelegramInterfaceBot:
         builder.button(text="❌ Cancelar", callback_data="cancel_operation")
         builder.adjust(2, 1)
         
-        await LabelReprintForm.typing_date.set()
+        await state.set_state(LabelReprintForm.typing_date)
         await callback_query.message.edit_text(
             f"✅ *Opção Selecionada*: {label_desc}\n\n"
             f"📅 *Qual é a data de fabricação do lote?*\n"
@@ -331,7 +331,7 @@ class TelegramInterfaceBot:
                     builder.button(text="❌ Cancelar", callback_data="cancel_operation")
                     builder.adjust(1)
                     
-                    await LabelReprintForm.confirming_email.set()
+                    await state.set_state(LabelReprintForm.confirming_email)
                     await message.answer(
                         f"📧 *Cadastro Localizado*:\n"
                         f"Identificamos que seu Telegram está associado ao e-mail:\n`{saved_email}`.\n\n"
@@ -342,18 +342,18 @@ class TelegramInterfaceBot:
                     return
             
             # Se não encontrou e-mail, pede para digitar um
-            await self.ask_for_new_email(message)
+            await self.ask_for_new_email(message, state)
             
         except Exception as e:
             logger.error(f"Erro ao verificar e-mail do telegram {telegram_id}: {e}")
             # Em caso de erro, procedemos perguntando o e-mail para não travar o bot
-            await self.ask_for_new_email(message)
+            await self.ask_for_new_email(message, state)
 
     # --- FLUXO DE E-MAIL ---
 
-    async def ask_for_new_email(self, message: types.Message):
+    async def ask_for_new_email(self, message: types.Message, state: FSMContext):
         """Pede para o usuário digitar o e-mail."""
-        await LabelReprintForm.typing_email.set()
+        await state.set_state(LabelReprintForm.typing_email)
         await message.answer(
             "📧 *E-mail de Destino*:\n"
             "Não localizamos um e-mail padrão para o seu ID do Telegram.\n\n"
@@ -444,7 +444,7 @@ class TelegramInterfaceBot:
         builder.button(text="❌ Cancelar", callback_data="cancel_operation")
         builder.adjust(1)
         
-        await LabelReprintForm.confirming_generation.set()
+        await state.set_state(LabelReprintForm.confirming_generation)
         await message.answer(resumo_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.MARKDOWN)
 
     async def process_final_generation(self, callback_query: types.CallbackQuery, state: FSMContext):
@@ -538,7 +538,7 @@ class TelegramInterfaceBot:
         builder.button(text="👋 Não, sair", callback_data="loop_no")
         builder.adjust(2)
         
-        await LabelReprintForm.loop_decision.set()
+        await state.set_state(LabelReprintForm.loop_decision)
         await message.answer(
             "🤔 *Deseja gerar outro rótulo de ração agora?*",
             reply_markup=builder.as_markup(),
