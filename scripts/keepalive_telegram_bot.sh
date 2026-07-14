@@ -48,10 +48,7 @@ else
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Watchdog: Bot do Telegram nao localizado. Inicializando..." >> "$LOG_FILE"
     cd "$PROJECT_DIR"
     
-    # Carrega as variaveis de ambiente
-    if [ -f ".env" ]; then
-        source .env
-    fi
+
     
     # Executa o bot em background usando o venv redirecionando stdout e stderr para o log
     nohup venv/bin/python3 scripts/run_telegram_bot.py >> "$LOG_FILE" 2>&1 &
