@@ -327,7 +327,7 @@ class TelegramInterfaceBot:
                     
                     builder = InlineKeyboardBuilder()
                     builder.button(text=f"✉️ Sim, enviar para {saved_email}", callback_data="email_confirm_yes")
-                    builder.button(text="✏️ Enviar para outro e-mail", callback_data="email_confirm_no")
+                    builder.button(text="✏️ Ajustar e-mail cadastrado", callback_data="email_confirm_no")
                     builder.button(text="❌ Cancelar", callback_data="cancel_operation")
                     builder.adjust(1)
                     
@@ -372,7 +372,7 @@ class TelegramInterfaceBot:
             await self.show_final_confirmation(callback_query.message, state)
         else:
             # Pede outro e-mail
-            await self.ask_for_new_email(callback_query.message)
+            await self.ask_for_new_email(callback_query.message, state)
 
     async def process_typed_email(self, message: types.Message, state: FSMContext):
         """Processa e valida o e-mail digitado pelo usuário."""
