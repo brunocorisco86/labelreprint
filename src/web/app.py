@@ -712,6 +712,315 @@ def save_telegram_user():
         logger.error(f"Erro ao salvar usuário do Telegram {telegram_id}: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+# ==============================================================================
+#                      ENDPOINTS DE INTEGRAÇÃO COM AGENTES DE IA (API REST)
+# ==============================================================================
+
+@app.route('/api/ai/templates', methods=['GET'])
+def ai_list_templates():
+    """
+    Retorna a lista estruturada de templates disponíveis com configurações
+    relevantes para um agente de IA saber quais são as opções.
+    """
+    options = load_templates_options()
+    shelf_life_config = load_shelf_life()
+    
+    formatted_templates = []
+    for opt in options:
+        fornecedor = opt["fornecedor"]
+        formatted_templates.append({
+            "fornecedor": fornecedor,
+            "fase": opt["fase"],
+            "tipo_racao": opt["tipo_racao"],
+            "pdf_template": opt["pdf"],
+            "shelf_life_padrao_dias": shelf_life_config.get(fornecedor, 60)
+        })
+        
+    return jsonify({
+        "success": True,
+        "templates": formatted_templates
+    })
+
+@app.route('/api/ai/generate', methods=['POST'])
+def ai_generate_label():
+    """
+    Gera um rótulo de ração com base nos parâmetros simplificados.
+    O template é localizado de forma inteligente pelo backend.
+    """
+    data = request.json or {}
+    fornecedor = data.get('fornecedor')
+    fase = data.get('fase')
+    tipo_racao = data.get('tipo_racao', 'CM')
+    data_fabricacao_str = data.get('data_fabricacao')
+    custom_validade_str = data.get('data_validade')
+    
+    if not fornecedor:
+        return jsonify({"success": False, "error": "O parâmetro 'fornecedor' é obrigatório."}), 400
+        
+    fornecedor = fornecedor.strip().upper()
+    
+    # Normalização e Sinonímia de Certificações (Global Gap / Global SLP)
+    tipo_racao = tipo_racao.strip().upper()
+    if tipo_racao in ["GG", "SLP", "GLOBAL GAP", "GLOBAL SLP", "GLOBALGAP", "GLOBALSLP"]:
+        tipo_racao = "GG"
+    else:
+        tipo_racao = "CM"
+        
+    # Mapeamento e normalização amigável de fase
+    if fase:
+        fase = fase.strip().upper()
+        fase_map = {
+            "PREINICIAL": "1_PREINICIAL",
+            "PRE-INICIAL": "1_PREINICIAL",
+            "INICIAL1": "2_INICIAL1",
+            "INICIAL": "2_INICIAL1",
+            "INICIAL2": "3_INICIAL2",
+            "CRESCIMENTO": "4_CRESCIMENTO",
+            "ABATE": "5_ABATE"
+        }
+        if fase in fase_map:
+            fase = fase_map[fase]
+    else:
+        # Se for terceiros, a fase padrão é 4_CRESCIMENTO
+        if fornecedor != "CVALE":
+            fase = "4_CRESCIMENTO"
+        else:
+            return jsonify({"success": False, "error": "O parâmetro 'fase' é obrigatório para o fornecedor CVALE."}), 400
+            
+    # Regra zootécnica: Terceiros só possuem a fase 4_CRESCIMENTO
+    if fornecedor != "CVALE":
+        fase = "4_CRESCIMENTO"
+        
+    # Carrega e busca o template
+    options = load_templates_options()
+    selected_option = next(
+        (opt for opt in options if opt["fornecedor"] == fornecedor and opt["fase"] == fase and opt["tipo_racao"] == tipo_racao), 
+        None
+    )
+    
+    if not selected_option:
+        valid_options_desc = [f"{opt['fornecedor']} - {opt['fase']} ({opt['tipo_racao']})" for opt in options]
+        return jsonify({
+            "success": False, 
+            "error": f"Nenhum template correspondente para Fornecedor={fornecedor}, Fase={fase}, Tipo={tipo_racao}.",
+            "valid_combinations": valid_options_desc
+        }), 400
+        
+    template_name = selected_option["pdf"]
+    
+    # Processamento de datas
+    if not data_fabricacao_str:
+        dt_fabricacao = datetime.now()
+    else:
+        try:
+            dt_fabricacao = datetime.strptime(data_fabricacao_str, "%Y-%m-%d")
+        except ValueError:
+            return jsonify({"success": False, "error": "Formato de data_fabricacao inválido. Use YYYY-MM-DD."}), 400
+            
+    shelf_life_config = load_shelf_life()
+    validade_dias = shelf_life_config.get(fornecedor, 60)
+    
+    if custom_validade_str:
+        try:
+            dt_validade = datetime.strptime(custom_validade_str, "%Y-%m-%d")
+            if dt_validade < dt_fabricacao:
+                return jsonify({"success": False, "error": "A data de validade não pode ser anterior à data de fabricação."}), 400
+            validade_dias = (dt_validade - dt_fabricacao).days
+        except ValueError:
+            return jsonify({"success": False, "error": "Formato de data_validade inválido. Use YYYY-MM-DD."}), 400
+    else:
+        dt_validade = dt_fabricacao + timedelta(days=validade_dias)
+        
+    lote_impresso = dt_fabricacao.strftime("%d%m%y")
+    
+    export_dir = os.path.join(root_dir, "Export/manuais")
+    os.makedirs(export_dir, exist_ok=True)
+    
+    data_slug = dt_fabricacao.strftime("%d-%m-%Y")
+    base_name = template_name.replace(".pdf", "")
+    filename = f"{base_name}_FAB_{data_slug}.pdf"
+    output_path = os.path.join(export_dir, filename)
+    
+    tipo_label_completo = "Comum" if selected_option["tipo_racao"] == "CM" else "GlobalGap"
+    
+    logger.info(
+        f"AI API - Solicitada geração: Template={template_name}, "
+        f"Fornecedor={fornecedor}, Fase={fase}, Tipo={tipo_label_completo}, "
+        f"Fab={dt_fabricacao.strftime('%Y-%m-%d')}, Venc={dt_validade.strftime('%Y-%m-%d')} ({validade_dias} dias), "
+        f"Lote={lote_impresso}, Output={filename}"
+    )
+    
+    try:
+        writer = PDFLabelWriter()
+        writer.shelf_life_configs[fornecedor] = validade_dias
+        
+        writer.write_label(
+            template_name=template_name,
+            data_fabricacao_raw=dt_fabricacao.strftime("%Y-%m-%d"),
+            lote=lote_impresso,
+            shelf_life_days=validade_dias,
+            output_path=output_path
+        )
+        
+        download_url = f"{request.url_root}download/{filename}"
+        
+        return jsonify({
+            "success": True,
+            "filename": filename,
+            "download_url": download_url,
+            "summary": {
+                "fornecedor": fornecedor,
+                "fase": selected_option["fase"],
+                "tipo_racao": tipo_label_completo,
+                "template": template_name,
+                "data_fabricacao": dt_fabricacao.strftime("%d/%m/%Y"),
+                "data_validade": dt_validade.strftime("%d/%m/%Y"),
+                "validade_dias": validade_dias,
+                "lote": lote_impresso
+            }
+        })
+    except Exception as e:
+        error_msg = f"AI API - Erro ao preencher rótulo: {e}"
+        logger.error(error_msg, exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/ai/generate_nucleo', methods=['POST'])
+def ai_generate_nucleo():
+    """
+    Aciona a geração em lote de todos os rótulos e sumários para
+    os aviários/lotes associados a um núcleo específico.
+    """
+    data = request.json or {}
+    nucleo_id = data.get('nucleo')
+    
+    if not nucleo_id:
+        return jsonify({"success": False, "error": "O campo 'nucleo' é obrigatório."}), 400
+        
+    if not os.path.exists(DATABASE_PATH):
+        return jsonify({"success": False, "error": "Banco de dados relacional não encontrado."}), 500
+        
+    conn = sqlite3.connect(DATABASE_PATH)
+    try:
+        df_lotes = pd.read_sql(
+            "SELECT DISTINCT F.FazendaLote FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo = ? AND F.FazendaLote IS NOT NULL", 
+            conn, 
+            params=(nucleo_id,)
+        )
+        lotes_lista = df_lotes["FazendaLote"].tolist()
+    except Exception as e:
+        logger.error(f"Erro ao buscar lotes para o núcleo {nucleo_id}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        conn.close()
+        
+    if not lotes_lista:
+        return jsonify({"success": False, "error": f"Nenhum lote ativo associado ao Núcleo {nucleo_id}."}), 400
+        
+    logger.info(f"AI API - Solicitada geração em lote do Núcleo={nucleo_id}, Lotes={lotes_lista}")
+    
+    try:
+        from src.core.generator import BatchGenerator
+        generator = BatchGenerator(delete_individuals=True)
+        sucesso, erros = generator.generate_all(lotes_filtro=lotes_lista)
+        
+        return jsonify({
+            "success": True,
+            "sucesso_count": sucesso,
+            "erros_count": erros,
+            "message": f"Geração concluída para o Núcleo {nucleo_id}. Processados: {sucesso} com sucesso, {erros} erros."
+        })
+    except Exception as e:
+        error_msg = f"AI API - Falha no BatchGenerator para o núcleo {nucleo_id}: {e}"
+        logger.error(error_msg, exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/ai/sumario', methods=['GET'])
+def ai_get_sumario():
+    """
+    Retorna o sumário de entregas (sumario_entregas.txt) formatado e limpo,
+    apropriado para leitura por agentes de IA e compartilhamento.
+    """
+    fazenda_lote = request.args.get('lote')
+    if not fazenda_lote:
+        return jsonify({"success": False, "error": "O parâmetro 'lote' é obrigatório."}), 400
+        
+    if not os.path.exists(DATABASE_PATH):
+        return jsonify({"success": False, "error": "Banco de dados relacional não encontrado."}), 500
+        
+    conn = sqlite3.connect(DATABASE_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT Extensionista, TipoRacao, NomeFazenda FROM EntregasRacao WHERE FazendaLote = ? LIMIT 1",
+            (fazenda_lote,)
+        )
+        row = cursor.fetchone()
+        
+        if not row:
+            # Caso o lote seja cadastrado, mas sem entregas processadas ativas
+            cursor.execute(
+                "SELECT R.Extensionista, R.NomeFazenda AS [Nome Aviário] FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE F.FazendaLote = ? LIMIT 1",
+                (fazenda_lote,)
+            )
+            row_europa = cursor.fetchone()
+            if not row_europa:
+                return jsonify({"success": False, "error": f"Lote composto {fazenda_lote} não foi localizado."}), 404
+                
+            extensionista, nome_produtor = row_europa
+            return jsonify({
+                "success": True,
+                "lote": fazenda_lote,
+                "produtor": nome_produtor,
+                "extensionista": extensionista,
+                "tem_cargas": False,
+                "text": f"Lote composto {fazenda_lote} cadastrado no aviário de {nome_produtor}, mas sem entregas ativas registradas."
+            })
+            
+        extensionista, tipo_racao, nome_produtor = row
+        tipo_racao_pasta = "Comum" if tipo_racao.upper() in ["CM", "COMUM"] else "GlobalGap"
+        nome_produtor_slug = nome_produtor.replace(" ", "_").upper()
+        extensionista_slug = extensionista.replace(" ", "_").upper()
+        
+        sumario_filename = "sumario_entregas.txt"
+        sumario_path = os.path.join(
+            root_dir, 
+            "Export", 
+            extensionista_slug, 
+            tipo_racao_pasta, 
+            nome_produtor_slug, 
+            fazenda_lote, 
+            sumario_filename
+        )
+        
+        if not os.path.exists(sumario_path):
+            return jsonify({
+                "success": True,
+                "lote": fazenda_lote,
+                "produtor": nome_produtor,
+                "extensionista": extensionista,
+                "tem_cargas": True,
+                "arquivo_sumario_existe": False,
+                "text": f"O sumário de entregas ainda não foi gerado fisicamente para o lote {fazenda_lote}. Por favor, execute a geração para renderizá-lo."
+            })
+            
+        with open(sumario_path, "r", encoding="utf-8") as f:
+            sumario_text = f.read()
+            
+        return jsonify({
+            "success": True,
+            "lote": fazenda_lote,
+            "produtor": nome_produtor,
+            "extensionista": extensionista,
+            "tem_cargas": True,
+            "arquivo_sumario_existe": True,
+            "text": sumario_text
+        })
+    except Exception as e:
+        logger.error(f"Erro ao carregar sumário do lote {fazenda_lote}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        conn.close()
+
 if __name__ == "__main__":
     # Permite passar a porta por variável de ambiente para flexibilidade no Homelab
     port = int(os.getenv("PORT", 5001))
