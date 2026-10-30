@@ -1,8 +1,10 @@
 import os
 import re
+import csv
+import math
 import sqlite3
-import pandas as pd
 import unicodedata
+from collections import defaultdict
 from dotenv import load_dotenv
 from src.pdf.writer import PDFLabelWriter
 
@@ -14,6 +16,17 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__fi
 DATABASE_PATH = os.getenv("DATABASE_PATH", os.path.join(PROJECT_ROOT, "data/processed/entregas_processadas.db"))
 EXPORT_DIR = os.getenv("EXPORT_DIR", os.path.join(PROJECT_ROOT, "Export"))
 DEFAULT_SHELF_LIFE = int(os.getenv("SHELF_LIFE_DAYS", "60"))
+
+
+def _is_na(val):
+    if val is None:
+        return True
+    if isinstance(val, float) and math.isnan(val):
+        return True
+    if isinstance(val, str) and val.strip().lower() in ("", "nan", "none"):
+        return True
+    return False
+
 
 def sanitize_folder_name(name):
     """
@@ -45,7 +58,9 @@ class BatchGenerator:
         self.delete_individuals = delete_individuals
 
     def get_connection(self):
-        return sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
 
     def generate_all(self, shelf_life_days=None, limit=None, tipo_racao_filtro=None, lotes_filtro=None):
         """
@@ -58,23 +73,27 @@ class BatchGenerator:
             raise FileNotFoundError(f"Banco de dados de entregas não encontrado em: {self.db_path}. Execute o ETL primeiro.")
             
         conn = self.get_connection()
-        query = "SELECT * FROM EntregasRacao"
-        if limit:
-            query += f" LIMIT {limit}"
-            
-        df_entregas = pd.read_sql(query, conn)
-        conn.close()
+        try:
+            query = "SELECT * FROM EntregasRacao"
+            if limit:
+                query += f" LIMIT {int(limit)}"
+            cursor = conn.cursor()
+            cursor.execute(query)
+            entregas = [dict(r) for r in cursor.fetchall()]
+        finally:
+            conn.close()
         
         # Filtragem por tipo de ração (GlobalGap ou Comum) se aplicável
         if tipo_racao_filtro:
             tipo_filtro_limpo = str(tipo_racao_filtro).upper()
-            df_entregas = df_entregas[df_entregas['TipoRacao'].astype(str).str.upper() == tipo_filtro_limpo]
+            entregas = [r for r in entregas if str(r.get('TipoRacao', '')).upper() == tipo_filtro_limpo]
             
         # Filtragem por lotes específicos (para geração sob demanda/filtro de núcleo)
         if lotes_filtro:
-            df_entregas = df_entregas[df_entregas['FazendaLote'].isin(lotes_filtro)]
+            lotes_set = set(lotes_filtro)
+            entregas = [r for r in entregas if r.get('FazendaLote') in lotes_set]
         
-        total_records = len(df_entregas)
+        total_records = len(entregas)
         filtro_msg = f" (Filtro Tipo: {tipo_racao_filtro})" if tipo_racao_filtro else ""
         print(f"[Generator] Iniciando geração de {total_records} rótulos{filtro_msg} com shelf-life de {days} dias...")
         
@@ -82,9 +101,9 @@ class BatchGenerator:
         success_count = 0
         error_count = 0
         
-        for idx, row in df_entregas.iterrows():
-            id_rotulo = row['id_rotulo']
-            if pd.isna(id_rotulo) or not id_rotulo:
+        for row in entregas:
+            id_rotulo = row.get('id_rotulo')
+            if _is_na(id_rotulo) or not id_rotulo:
                 continue
             template = row['TemplatePDF']
             data_fab = row['Data']
@@ -142,27 +161,36 @@ class BatchGenerator:
 
         # 3. Gera o arquivo de índice consolidado index.csv
         if index_records:
-            df_index = pd.DataFrame(index_records)
             index_path = os.path.join(self.export_dir, "index.csv")
             os.makedirs(os.path.dirname(index_path), exist_ok=True)
-            df_index.to_csv(index_path, index=False, encoding="utf-8")
+            fieldnames = list(index_records[0].keys())
+            with open(index_path, "w", newline="", encoding="utf-8") as csvfile:
+                writer_csv = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer_csv.writeheader()
+                writer_csv.writerows(index_records)
             print(f"[Generator] Arquivo de índice consolidado gerado com sucesso em: {index_path}")
             
         # 4. Gera o arquivo sumario_entregas.txt e mescla os PDFs em cada pasta de lote, agrupados por Extensionista em ordem alfabética
-        if not df_entregas.empty:
+        if entregas:
             print("[Generator] Iniciando geração dos sumários e mesclagem de PDFs por lote (ordenado por Extensionista)...")
             
             # Agrupa por Extensionista e ordena as chaves (nomes dos extensionistas)
-            grouped_by_ext = df_entregas.groupby("Extensionista")
-            sorted_extensionistas = sorted(grouped_by_ext.groups.keys(), key=lambda x: str(x).upper())
+            grouped_by_ext = defaultdict(list)
+            for r in entregas:
+                grouped_by_ext[r.get("Extensionista")].append(r)
+            sorted_extensionistas = sorted(grouped_by_ext.keys(), key=lambda x: str(x).upper())
             
             for extensionista in sorted_extensionistas:
-                df_ext = grouped_by_ext.get_group(extensionista)
+                rows_ext = grouped_by_ext[extensionista]
                 print(f"\n[Extensionista] Iniciando processamento dos lotes de: {extensionista}")
                 
+                grouped_by_lote = defaultdict(list)
+                for r in rows_ext:
+                    grouped_by_lote[r.get("FazendaLote")].append(r)
+                
                 # Agrupa os lotes do extensionista
-                for fazenda_lote, group in df_ext.groupby("FazendaLote"):
-                    first_row = group.iloc[0]
+                for fazenda_lote, group in grouped_by_lote.items():
+                    first_row = group[0]
                     ext_folder = sanitize_folder_name(first_row['Extensionista'])
                     tipo_folder = "GlobalGap" if first_row['TipoRacao'] == "GG" else "Comum"
                     fazenda_folder = sanitize_folder_name(first_row['NomeFazenda'])
@@ -189,15 +217,23 @@ class BatchGenerator:
         print(f"[Generator] Fim da execução. Sucesso: {success_count} | Erros: {error_count}")
         return success_count, error_count
 
-    def _write_sumario(self, df_lote, output_path):
+    def _write_sumario(self, rows_lote, output_path):
         """
         Gera um arquivo de texto resumindo as entregas, retornos, sobras e transferências do lote.
         """
-        import re
+        if hasattr(rows_lote, "to_dict"):
+            rows_lote = rows_lote.to_dict(orient="records")
         # Ordena cronologicamente para exibição no sumário
-        df_sorted = df_lote.sort_values(by=['Data', 'HoraTransacao', 'id_rotulo']).reset_index(drop=True)
+        rows_sorted = sorted(
+            rows_lote,
+            key=lambda r: (
+                str(r.get('Data') or ''),
+                str(r.get('HoraTransacao') or ''),
+                str(r.get('id_rotulo') or '')
+            )
+        )
         
-        first_row = df_sorted.iloc[0]
+        first_row = rows_sorted[0]
         fazenda_lote = first_row['FazendaLote']
         nome_fazenda = first_row['NomeFazenda']
         extensionista = first_row['Extensionista']
@@ -215,19 +251,19 @@ class BatchGenerator:
         # Consolidação por fase
         soma_por_fase = {}
         
-        for _, row in df_sorted.iterrows():
+        for row in rows_sorted:
             data_str = row['Data']
             fase = row['FaseRacao']
             volume = float(row['QuantidadeEntregue'])
             status = row['StatusEntrega']
             num_carga = row['NumCarga']
-            obs = str(row['ObsFrete']).upper() if not pd.isna(row['ObsFrete']) else ""
+            obs = str(row['ObsFrete']).upper() if not _is_na(row.get('ObsFrete')) else ""
             
             # Identificação do Tipo de Transação
-            cod_trans = str(row['CodigoTransacao']).upper() if not pd.isna(row['CodigoTransacao']) else ""
-            num_ref_retorno = row['NumRefRetorno']
-            valor_remessa = float(row['ValorRemessa']) if not pd.isna(row['ValorRemessa']) else 0.0
-            nome_veiculo = str(row['NomeVeiculo']).upper() if not pd.isna(row['NomeVeiculo']) else ""
+            cod_trans = str(row['CodigoTransacao']).upper() if not _is_na(row.get('CodigoTransacao')) else ""
+            num_ref_retorno = row.get('NumRefRetorno')
+            valor_remessa = float(row['ValorRemessa']) if not _is_na(row.get('ValorRemessa')) else 0.0
+            nome_veiculo = str(row['NomeVeiculo']).upper() if not _is_na(row.get('NomeVeiculo')) else ""
             
             # Identifica aviário de destino em caso de transferência
             destino_aviario = "Não identificado"
@@ -238,12 +274,12 @@ class BatchGenerator:
             
             # Regras de Classificação
             # 1. Recolha de Sobra de Ração (Ração Abate no final do lote)
-            if pd.notna(num_ref_retorno) and cod_trans == 'CRÉDITO' and valor_remessa < 0 and nome_veiculo == 'X' and fase == '5_ABATE':
+            if not _is_na(num_ref_retorno) and cod_trans == 'CRÉDITO' and valor_remessa < 0 and nome_veiculo == 'X' and fase == '5_ABATE':
                 tipo_t = "Sobra/Rec."
                 total_retorno_sobra += volume
                 retornos_list.append((data_str, tipo_t, fase, volume, status, num_carga, obs, destino_aviario))
             # 2. Problema de Processo / Anomalia (Ração diferente de Abate nas condições de recolha)
-            elif pd.notna(num_ref_retorno) and cod_trans == 'CRÉDITO' and valor_remessa < 0 and nome_veiculo == 'X' and fase != '5_ABATE':
+            elif not _is_na(num_ref_retorno) and cod_trans == 'CRÉDITO' and valor_remessa < 0 and nome_veiculo == 'X' and fase != '5_ABATE':
                 tipo_t = "Retorno/Err"
                 total_retorno_sobra += volume
                 retornos_list.append((data_str, tipo_t, fase, volume, status, num_carga, obs, destino_aviario))
@@ -440,7 +476,7 @@ class BatchGenerator:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write("\n".join(lines))
 
-    def _merge_pdfs_lote(self, df_lote, target_dir):
+    def _merge_pdfs_lote(self, rows_lote, target_dir):
         """
         Mescla todos os PDFs de rótulos ativos de um lote em um único PDF
         no formato '{lote_composto}-{primeiro_nome_produtor}-{qtd_rotulos}.pdf',
@@ -448,17 +484,27 @@ class BatchGenerator:
         """
         from pypdf import PdfReader, PdfWriter
         
+        if hasattr(rows_lote, "to_dict"):
+            rows_lote = rows_lote.to_dict(orient="records")
+            
         # Filtra registros que geraram rótulo
-        df_active = df_lote[df_lote['id_rotulo'].notna()].copy()
-        if df_active.empty:
+        rows_active = [r for r in rows_lote if not _is_na(r.get('id_rotulo')) and r.get('id_rotulo')]
+        if not rows_active:
             return
             
         # Ordena cronologicamente por Data, HoraTransacao e id_rotulo
-        df_sorted = df_active.sort_values(by=['Data', 'HoraTransacao', 'id_rotulo']).reset_index(drop=True)
+        rows_sorted = sorted(
+            rows_active,
+            key=lambda r: (
+                str(r.get('Data') or ''),
+                str(r.get('HoraTransacao') or ''),
+                str(r.get('id_rotulo') or '')
+            )
+        )
         
         writer = PdfWriter()
         pdf_paths = []
-        for _, row in df_sorted.iterrows():
+        for row in rows_sorted:
             id_rotulo = row['id_rotulo']
             pdf_path = os.path.join(target_dir, f"{id_rotulo}.pdf")
             if os.path.exists(pdf_path):
@@ -476,7 +522,7 @@ class BatchGenerator:
         if len(pdf_paths) > 1:
             writer.compress_identical_objects()
             
-        first_row = df_sorted.iloc[0]
+        first_row = rows_sorted[0]
         fazenda_lote = first_row['FazendaLote']
         nome_fazenda = first_row['NomeFazenda']
         

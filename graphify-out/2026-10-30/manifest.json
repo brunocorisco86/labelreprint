@@ -1,0 +1,312 @@
+{
+  "config/destinatarios_salvos.json": {
+    "mtime": 1783223309.5351279,
+    "ast_hash": "8c8c624d06d86c82f9be7fe2f4cd0eca",
+    "semantic_hash": "8c8c624d06d86c82f9be7fe2f4cd0eca"
+  },
+  "config/shelf_life.json": {
+    "mtime": 1783051883.2084634,
+    "ast_hash": "a60cd3b3043eb3a8d478157b5cc396ff",
+    "semantic_hash": "a60cd3b3043eb3a8d478157b5cc396ff"
+  },
+  "config/template_resolver.json": {
+    "mtime": 1782922244.7866144,
+    "ast_hash": "eb88af9b1bf5cfe0485bc37fc564b4ce",
+    "semantic_hash": "eb88af9b1bf5cfe0485bc37fc564b4ce"
+  },
+  "config/templates.json": {
+    "mtime": 1782922244.7863777,
+    "ast_hash": "181db8056f980746974c2aea1de7715e",
+    "semantic_hash": "181db8056f980746974c2aea1de7715e"
+  },
+  "scripts/generate_all_grids.py": {
+    "mtime": 1782916414.982566,
+    "ast_hash": "56313c46761740eb85c3172cab2db9f2",
+    "semantic_hash": "56313c46761740eb85c3172cab2db9f2"
+  },
+  "scripts/generate_coamo_test_lotes.py": {
+    "mtime": 1782921511.9014213,
+    "ast_hash": "1a7e6cf0a6dc8cd9e92abaaa2f7846bc",
+    "semantic_hash": "1a7e6cf0a6dc8cd9e92abaaa2f7846bc"
+  },
+  "scripts/generate_desc_stats.py": {
+    "mtime": 1782916417.2375162,
+    "ast_hash": "7c5299791867646d3c0fdf1491cd33a7",
+    "semantic_hash": "7c5299791867646d3c0fdf1491cd33a7"
+  },
+  "scripts/generate_labels_by_nucleo.py": {
+    "mtime": 1783051883.2094634,
+    "ast_hash": "dcd1eb167b843b1133cd02d52ca9636c",
+    "semantic_hash": "dcd1eb167b843b1133cd02d52ca9636c"
+  },
+  "scripts/generate_manual_label.py": {
+    "mtime": 1783051883.2094634,
+    "ast_hash": "578843ae384c1efc5014f13cf8d3ad30",
+    "semantic_hash": "578843ae384c1efc5014f13cf8d3ad30"
+  },
+  "scripts/generate_production_lotes.py": {
+    "mtime": 1782916110.6222954,
+    "ast_hash": "8f37012475fa7158334bfded3a3a9c26",
+    "semantic_hash": "8f37012475fa7158334bfded3a3a9c26"
+  },
+  "scripts/generate_test_lotes.py": {
+    "mtime": 1782916109.1163287,
+    "ast_hash": "30d7b1ef924e656348a748341c414962",
+    "semantic_hash": "30d7b1ef924e656348a748341c414962"
+  },
+  "scripts/inspect_pdfs.py": {
+    "mtime": 1782853783.9412198,
+    "ast_hash": "f0b74c182bb6e565270f3758c4a85e6e",
+    "semantic_hash": "f0b74c182bb6e565270f3758c4a85e6e"
+  },
+  "scripts/production/deploy_data.sh": {
+    "mtime": 1783051883.2104635,
+    "ast_hash": "4ca24be4b050b39dd7b5d50c90a15669",
+    "semantic_hash": "4ca24be4b050b39dd7b5d50c90a15669"
+  },
+  "scripts/production/keepalive.sh": {
+    "mtime": 1783051883.211441,
+    "ast_hash": "380cf29a9dcf2636b3c2aa2a2756c7a0",
+    "semantic_hash": "380cf29a9dcf2636b3c2aa2a2756c7a0"
+  },
+  "scripts/production/setup_alpine.sh": {
+    "mtime": 1783051883.211441,
+    "ast_hash": "3d37df1f3c11a5d67b0d7f0c251284f5",
+    "semantic_hash": "3d37df1f3c11a5d67b0d7f0c251284f5"
+  },
+  "scripts/production/watchdog.sh": {
+    "mtime": 1783223309.5351279,
+    "ast_hash": "25968140cea053985b2c27a4f71ab212",
+    "semantic_hash": "25968140cea053985b2c27a4f71ab212"
+  },
+  "scripts/run_pipeline_ponta_a_ponta.py": {
+    "mtime": 1782916106.702382,
+    "ast_hash": "02608c50116505aa8bdfaff805c26987",
+    "semantic_hash": "02608c50116505aa8bdfaff805c26987"
+  },
+  "scripts/run_webserver.py": {
+    "mtime": 1783051883.211441,
+    "ast_hash": "b5f3251945e8311d026bc5ba25c72244",
+    "semantic_hash": "b5f3251945e8311d026bc5ba25c72244"
+  },
+  "scripts/sync_config_templates.py": {
+    "mtime": 1782916411.9026341,
+    "ast_hash": "0cf30913801218d7ecfeabfb4d073b4b",
+    "semantic_hash": "0cf30913801218d7ecfeabfb4d073b4b"
+  },
+  "scripts/test_smtp.py": {
+    "mtime": 1783051883.211441,
+    "ast_hash": "666a985548d0501f8f30649eb6c79ef4",
+    "semantic_hash": "666a985548d0501f8f30649eb6c79ef4"
+  },
+  "src/__init__.py": {
+    "mtime": 1782853495.8276021,
+    "ast_hash": "cfbd78ea0a5b7ccf1b82fed2dd931194",
+    "semantic_hash": "cfbd78ea0a5b7ccf1b82fed2dd931194"
+  },
+  "src/cli/__init__.py": {
+    "mtime": 1782853502.173541,
+    "ast_hash": "be68958674b0479294d9616aa8b5d535",
+    "semantic_hash": "be68958674b0479294d9616aa8b5d535"
+  },
+  "src/core/__init__.py": {
+    "mtime": 1782853498.435577,
+    "ast_hash": "a440799aa03adbf9ef2fb3ecb8d4cee6",
+    "semantic_hash": "a440799aa03adbf9ef2fb3ecb8d4cee6"
+  },
+  "src/core/data_manager.py": {
+    "mtime": 1783051883.2114635,
+    "ast_hash": "6e989971555e3ef797c9815443168f27",
+    "semantic_hash": "6e989971555e3ef797c9815443168f27"
+  },
+  "src/core/email_sender.py": {
+    "mtime": 1783223309.5351279,
+    "ast_hash": "26623c20c77e4c56f816c604be49e793",
+    "semantic_hash": "26623c20c77e4c56f816c604be49e793"
+  },
+  "src/core/generator.py": {
+    "mtime": 1783051883.2114635,
+    "ast_hash": "4374ea9acf7d3365d299860291412094",
+    "semantic_hash": "4374ea9acf7d3365d299860291412094"
+  },
+  "src/pdf/__init__.py": {
+    "mtime": 1782853500.21256,
+    "ast_hash": "3a9ef8d83a71b141f051a0668e4da00e",
+    "semantic_hash": "3a9ef8d83a71b141f051a0668e4da00e"
+  },
+  "src/pdf/writer.py": {
+    "mtime": 1782916409.6296844,
+    "ast_hash": "55a1b9cd621b0ee2df353ea3931a3215",
+    "semantic_hash": "55a1b9cd621b0ee2df353ea3931a3215"
+  },
+  "src/web/__init__.py": {
+    "mtime": 1782853503.4735284,
+    "ast_hash": "238bdbb379c39883f70204713b44dfc1",
+    "semantic_hash": "238bdbb379c39883f70204713b44dfc1"
+  },
+  "src/web/app.py": {
+    "mtime": 1783223309.5431278,
+    "ast_hash": "b19d7337f016daf605b3ab39a0d0e1db",
+    "semantic_hash": "b19d7337f016daf605b3ab39a0d0e1db"
+  },
+  "tests/__init__.py": {
+    "mtime": 1782853506.1075032,
+    "ast_hash": "8582c0f1b93b5344baea8eb1cdc2ddb6",
+    "semantic_hash": "8582c0f1b93b5344baea8eb1cdc2ddb6"
+  },
+  "tests/test_api_generate_all.py": {
+    "mtime": 1783223309.5361278,
+    "ast_hash": "a8e4cb1dd5a4b03cb5f7d239241550bf",
+    "semantic_hash": "a8e4cb1dd5a4b03cb5f7d239241550bf"
+  },
+  "tests/test_aviario_lote_generation.py": {
+    "mtime": 1782916426.9983003,
+    "ast_hash": "9bb2c29db0efc13cfd272e07457be9d0",
+    "semantic_hash": "9bb2c29db0efc13cfd272e07457be9d0"
+  },
+  ".agents/AGENTS.md": {
+    "mtime": 1783223309.534128,
+    "ast_hash": "cf49bda4e43bc104b9f9094bf825d213",
+    "semantic_hash": "cf49bda4e43bc104b9f9094bf825d213"
+  },
+  ".agents/CICD.md": {
+    "mtime": 1783051883.2064636,
+    "ast_hash": "0f0f1ac43551b85152566b07cddcbde1",
+    "semantic_hash": "0f0f1ac43551b85152566b07cddcbde1"
+  },
+  ".agents/skills/reimpressao_rotulos/SKILL.md": {
+    "mtime": 1783223309.534128,
+    "ast_hash": "747495802fd965c899dd0a738237a546",
+    "semantic_hash": "747495802fd965c899dd0a738237a546"
+  },
+  "CHANGELOG.md": {
+    "mtime": 1783051883.2064636,
+    "ast_hash": "19537b054445de9b7878ac0b1e8ebcfb",
+    "semantic_hash": "19537b054445de9b7878ac0b1e8ebcfb"
+  },
+  "IDEA.md": {
+    "mtime": 1783051883.2064636,
+    "ast_hash": "10da65188379e5ef504939a2a49968b7",
+    "semantic_hash": "10da65188379e5ef504939a2a49968b7"
+  },
+  "README.md": {
+    "mtime": 1783051883.2074635,
+    "ast_hash": "82ba46f3e3329333d835e75df0aa2a16",
+    "semantic_hash": "82ba46f3e3329333d835e75df0aa2a16"
+  },
+  "cron_example.md": {
+    "mtime": 1783051883.2084634,
+    "ast_hash": "757b539cec603b8e169287a78bf41375",
+    "semantic_hash": "757b539cec603b8e169287a78bf41375"
+  },
+  "docs/estatisticas_descritivas.md": {
+    "mtime": 1782853769.9870234,
+    "ast_hash": "0288076110ced6d17edce272640156be",
+    "semantic_hash": "0288076110ced6d17edce272640156be"
+  },
+  "docs/estatisticas_lotes_ativos.md": {
+    "mtime": 1782907909.9948895,
+    "ast_hash": "2c2dad6ba81fe3dbf1944d7774b18163",
+    "semantic_hash": "2c2dad6ba81fe3dbf1944d7774b18163"
+  },
+  "docs/mer.md": {
+    "mtime": 1783051883.2084634,
+    "ast_hash": "75b09139d4f9c6fa468e71e1ad684d92",
+    "semantic_hash": "75b09139d4f9c6fa468e71e1ad684d92"
+  },
+  "knowledge/regras_negocio.md": {
+    "mtime": 1783051883.2094634,
+    "ast_hash": "aedb2a39dc33f9567c20dc9ccc8305a8",
+    "semantic_hash": "aedb2a39dc33f9567c20dc9ccc8305a8"
+  },
+  "requirements.txt": {
+    "mtime": 1783731103.8601248,
+    "ast_hash": "9636258cd1a72c507b4226cc11c1c2e6",
+    "semantic_hash": "9636258cd1a72c507b4226cc11c1c2e6"
+  },
+  "src/web/templates/index.html": {
+    "mtime": 1783223309.544128,
+    "ast_hash": "14cfd30222bd4d4db37bd7180d925ea1",
+    "semantic_hash": "14cfd30222bd4d4db37bd7180d925ea1"
+  },
+  "assets/RotulosTemplate/AGRIFIRM_4_CRESCIMENTO_CM.pdf": {
+    "mtime": 1782865020.451604,
+    "ast_hash": "ac5caa329636bfaf3b4f132325230795",
+    "semantic_hash": "ac5caa329636bfaf3b4f132325230795"
+  },
+  "assets/RotulosTemplate/COAMO_4_CRESCIMENTO_CM.pdf": {
+    "mtime": 1782920702.1077206,
+    "ast_hash": "a93bf26066dc66fe59957bd59fbd7246",
+    "semantic_hash": "a93bf26066dc66fe59957bd59fbd7246"
+  },
+  "assets/RotulosTemplate/COPACOL_4_CRESCIMENTO_CM.pdf": {
+    "mtime": 1782865084.894924,
+    "ast_hash": "70b19c4dc078dbc7cd453e4044b06169",
+    "semantic_hash": "70b19c4dc078dbc7cd453e4044b06169"
+  },
+  "assets/RotulosTemplate/CVALE_1_PREINICIAL_CM.pdf": {
+    "mtime": 1782839588.0,
+    "ast_hash": "b6c321bc7ae9e7b63d9078d87ada5488",
+    "semantic_hash": "b6c321bc7ae9e7b63d9078d87ada5488"
+  },
+  "assets/RotulosTemplate/CVALE_1_PREINICIAL_GG.pdf": {
+    "mtime": 1782839588.0,
+    "ast_hash": "b6fc251b773f86944132d568179f3832",
+    "semantic_hash": "b6fc251b773f86944132d568179f3832"
+  },
+  "assets/RotulosTemplate/CVALE_2_INICIAL1_CM.pdf": {
+    "mtime": 1782839588.0,
+    "ast_hash": "6f0bba3aeaeda151563ba791ba6a27bf",
+    "semantic_hash": "6f0bba3aeaeda151563ba791ba6a27bf"
+  },
+  "assets/RotulosTemplate/CVALE_2_INICIAL1_GG.pdf": {
+    "mtime": 1782839588.0,
+    "ast_hash": "3014cf52fa3b193d27763014b89fff2b",
+    "semantic_hash": "3014cf52fa3b193d27763014b89fff2b"
+  },
+  "assets/RotulosTemplate/CVALE_3_INICIAL2_CM.pdf": {
+    "mtime": 1782839588.0,
+    "ast_hash": "1eb422cc93f55c011754b86c94e44f5c",
+    "semantic_hash": "1eb422cc93f55c011754b86c94e44f5c"
+  },
+  "assets/RotulosTemplate/CVALE_3_INICIAL2_GG.pdf": {
+    "mtime": 1782839588.0,
+    "ast_hash": "b65f7bf0229dd44c447157596ce8cfe8",
+    "semantic_hash": "b65f7bf0229dd44c447157596ce8cfe8"
+  },
+  "assets/RotulosTemplate/CVALE_4_CRESCIMENTO_CM.pdf": {
+    "mtime": 1782839588.0,
+    "ast_hash": "955bc330fc46f23fb24a0c8f8243f275",
+    "semantic_hash": "955bc330fc46f23fb24a0c8f8243f275"
+  },
+  "assets/RotulosTemplate/CVALE_4_CRESCIMENTO_GG.pdf": {
+    "mtime": 1782839588.0,
+    "ast_hash": "b9b537e9863b0605d0fec718fd62b7eb",
+    "semantic_hash": "b9b537e9863b0605d0fec718fd62b7eb"
+  },
+  "assets/RotulosTemplate/CVALE_5_ABATE_CM.pdf": {
+    "mtime": 1782839588.0,
+    "ast_hash": "672fd29b0d2c981ae2cc2f9ff1c6cf0d",
+    "semantic_hash": "672fd29b0d2c981ae2cc2f9ff1c6cf0d"
+  },
+  "assets/RotulosTemplate/CVALE_5_ABATE_GG.pdf": {
+    "mtime": 1782839588.0,
+    "ast_hash": "8618348771772563b6650e7a7983eb66",
+    "semantic_hash": "8618348771772563b6650e7a7983eb66"
+  },
+  "assets/RotulosTemplate/LAR_4_CRESCIMENTO_CM.pdf": {
+    "mtime": 1783051883.2084634,
+    "ast_hash": "e5f5c3407321d381941182a5f2088b2c",
+    "semantic_hash": "e5f5c3407321d381941182a5f2088b2c"
+  },
+  "images/logo_cvale.jpeg": {
+    "mtime": 1783051883.2084634,
+    "ast_hash": "1e9799a931cfb85859447249e6fbecd9",
+    "semantic_hash": "1e9799a931cfb85859447249e6fbecd9"
+  },
+  "src/web/static/images/logo_cvale.jpeg": {
+    "mtime": 1783051883.2127953,
+    "ast_hash": "1e9799a931cfb85859447249e6fbecd9",
+    "semantic_hash": "1e9799a931cfb85859447249e6fbecd9"
+  }
+}

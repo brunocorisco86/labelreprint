@@ -18,7 +18,9 @@ def main():
     print("Para encerrar o servidor, pressione CTRL+C.\n")
     print("----------------------------------------------------")
     
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    port = int(os.getenv("PORT", 5001))
+    debug = os.getenv("FLASK_DEBUG", "0") == "1"
+    app.run(host="0.0.0.0", port=port, debug=debug)
 
 if __name__ == "__main__":
     main()

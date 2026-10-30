@@ -1,9 +1,8 @@
 import os
+import math
 import sqlite3
 import glob
 import re
-import pandas as pd
-import numpy as np
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -13,6 +12,18 @@ load_dotenv()
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 
 DATABASE_PATH = os.getenv("DATABASE_PATH", os.path.join(PROJECT_ROOT, "data/processed/entregas_processadas.db"))
+
+
+def _is_na(val):
+    """Verifica se um valor é nulo/NaN sem depender de pandas no escopo global."""
+    if val is None:
+        return True
+    if isinstance(val, float) and math.isnan(val):
+        return True
+    if isinstance(val, str) and val.strip().lower() in ("", "nan", "none"):
+        return True
+    return False
+
 
 class DataManager:
     """
@@ -35,8 +46,7 @@ class DataManager:
             else:
                 self.raw_dir = os.path.join(PROJECT_ROOT, "data/templates")
         
-        # Inicializa as tabelas de Telegram e e-mails salvos
-        self.init_telegram_table()
+        # Inicializa a tabela de e-mails salvos
         self.init_saved_emails_table()
 
     def get_connection(self):
@@ -44,7 +54,7 @@ class DataManager:
 
     def normalize_fazenda_lote(self, fazenda_lote):
         """Normaliza a string FazendaLote para remover zeros à esquerda do lote e garantir formato padrão {fazenda}-{lote} (ex: '1342-05' -> '1342-5')"""
-        if pd.isna(fazenda_lote):
+        if _is_na(fazenda_lote):
             return None
         
         fazenda_lote_str = str(fazenda_lote).strip()
@@ -60,7 +70,7 @@ class DataManager:
 
     def extract_lote(self, fazenda_lote):
         """Extrai o lote ordinal da string FazendaLote (ex: '1351-1' -> '01')"""
-        if pd.isna(fazenda_lote):
+        if _is_na(fazenda_lote):
             return "00"
         
         fazenda_lote_str = str(fazenda_lote).strip()
@@ -77,7 +87,7 @@ class DataManager:
 
     def extract_fase_racao(self, nome_formula):
         """Mapeia o nome da fórmula para a fase da ração correspondente"""
-        if pd.isna(nome_formula):
+        if _is_na(nome_formula):
             return "DESCONHECIDA"
         
         nome = str(nome_formula).upper()
@@ -95,7 +105,7 @@ class DataManager:
 
     def detect_factory(self, obs_frete):
         """Identifica a fábrica produtora da ração com base nas observações de frete"""
-        if pd.isna(obs_frete):
+        if _is_na(obs_frete):
             return "CVALE"
         
         obs = str(obs_frete).upper()
@@ -126,6 +136,8 @@ class DataManager:
 
     def run_etl(self):
         """Executa todo o pipeline de ETL e salva os dados no SQLite"""
+        import pandas as pd
+        import numpy as np
         print("[ETL] Iniciando carregamento dos dados brutos...")
         
         # 1. Carregar Regiões
@@ -416,60 +428,6 @@ class DataManager:
 
             
             print("[ETL] ETL executado com sucesso e tabelas criadas no banco de dados!")
-        finally:
-            conn.close()
-
-    def init_telegram_table(self):
-        """Inicializa a tabela UsuariosTelegram no SQLite para associar telegram_id e emails"""
-        conn = self.get_connection()
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS UsuariosTelegram (
-                    telegram_id INTEGER PRIMARY KEY,
-                    email TEXT NOT NULL,
-                    username TEXT,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            conn.commit()
-        except Exception as e:
-            print(f"[DataManager] Erro ao inicializar tabela de Telegram: {e}")
-        finally:
-            conn.close()
-
-    def get_telegram_user(self, telegram_id):
-        """Retorna o e-mail cadastrado para o telegram_id ou None"""
-        conn = self.get_connection()
-        try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT email FROM UsuariosTelegram WHERE telegram_id = ?", (telegram_id,))
-            row = cursor.fetchone()
-            return row[0] if row else None
-        except Exception as e:
-            print(f"[DataManager] Erro ao buscar usuário do Telegram: {e}")
-            return None
-        finally:
-            conn.close()
-
-    def save_telegram_user(self, telegram_id, email, username=None):
-        """Salva ou atualiza a associação telegram_id -> email"""
-        conn = self.get_connection()
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO UsuariosTelegram (telegram_id, email, username, updated_at)
-                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                ON CONFLICT(telegram_id) DO UPDATE SET
-                    email = excluded.email,
-                    username = excluded.username,
-                    updated_at = CURRENT_TIMESTAMP
-            """, (telegram_id, email.strip().lower(), username))
-            conn.commit()
-            return True
-        except Exception as e:
-            print(f"[DataManager] Erro ao salvar usuário do Telegram: {e}")
-            return False
         finally:
             conn.close()
 

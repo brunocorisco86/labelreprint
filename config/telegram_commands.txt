@@ -1,3 +1,0 @@
-start - Iniciar assistente e ver menu principal
-cancel - Cancelar operação ativa e voltar ao início
-help - Guia de uso e ajuda do portal C.Vale

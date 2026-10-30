@@ -96,7 +96,7 @@ O projeto conta com um portal local moderno e intuitivo para seleção de templa
    ```bash
    PYTHONPATH=. venv/bin/python3 scripts/run_webserver.py
    ```
-2. **Acesse no navegador:** Abra o endereço [http://localhost:5000](http://localhost:5000).
+2. **Acesse no navegador:** Abra o endereço [http://localhost:5001](http://localhost:5001).
 3. **Abas de Controle e Operação:**
    * **Aba 1 (Emissão Avulsa):** Escolha o tipo de ração/template, a data de fabricação, altere se desejar a data de validade através de um calendário interativo e gere o PDF de forma avulsa. Após gerar, você pode baixar o PDF, enviá-lo por e-mail com logotipo C.Vale embutido, ou cadastrar novos destinatários.
    * **Aba 2 (Geração Núcleo):** Selecione o núcleo de criação desejado para listar todas as granjas vinculadas e o volume de entregas. Clique em "Gerar Rótulos do Núcleo" para disparar o pipeline relacional completo de forma segmentada.

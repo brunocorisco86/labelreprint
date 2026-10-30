@@ -576,7 +576,7 @@
         <!-- Cabeçalho -->
         <header>
             <div class="logo-area">
-                <img src="/static/images/logo_cvale.jpeg" alt="C.Vale Logo" style="height: 50px; width: 50px; border-radius: 8px; border: 1.5px solid var(--border-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);">
+                <img src="{{ url_for('static', filename='images/logo_cvale.jpeg') }}" alt="C.Vale Logo" style="height: 50px; width: 50px; border-radius: 8px; border: 1.5px solid var(--border-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);">
                 <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                     <span class="logo-title">C.Vale</span>
                     <span class="logo-subtitle">Impressão de Rótulos de Ração</span>
@@ -924,6 +924,8 @@
        para renderizar as entregas.
 `;
 
+        const API_BASE = "{{ request.script_root }}";
+
         // Executar ao carregar a página
         window.addEventListener('DOMContentLoaded', () => {
             // Define data padrão de fabricação como hoje
@@ -1007,7 +1009,7 @@
         // Carrega os templates a partir do Backend
         async function fetchTemplates() {
             try {
-                const res = await fetch('/api/templates');
+                const res = await fetch(`${API_BASE}/api/templates`);
                 const data = await res.json();
                 
                 templates = data;
@@ -1031,7 +1033,7 @@
         // Carrega os núcleos a partir do Backend
         async function fetchNucleos() {
             try {
-                const res = await fetch('/api/nucleos');
+                const res = await fetch(`${API_BASE}/api/nucleos`);
                 const data = await res.json();
                 
                 nucleosList = data;
@@ -1052,7 +1054,7 @@
         // Carrega a lista de produtores/granjas
         async function fetchProdutores() {
             try {
-                const res = await fetch('/api/produtores');
+                const res = await fetch(`${API_BASE}/api/produtores`);
                 const data = await res.json();
                 
                 const select = document.getElementById('produtor-select');
@@ -1084,7 +1086,7 @@
             document.getElementById('sumario-status-info').innerHTML = "Escolha o produtor e o lote composto para visualizar o relatório de sumário de entregas no console lateral.";
             
             try {
-                const res = await fetch(`/api/produtores/lotes?produtor=${encodeURIComponent(produtor)}`);
+                const res = await fetch(`${API_BASE}/api/produtores/lotes?produtor=${encodeURIComponent(produtor)}`);
                 const data = await res.json();
                 
                 loteSelect.innerHTML = '<option value="" disabled selected>Selecione o lote composto...</option>';
@@ -1114,7 +1116,7 @@
             termBody.innerHTML = '<div>[SISTEMA] Solicitando arquivo sumario_entregas.txt...</div>';
             
             try {
-                const res = await fetch(`/api/sumario?lote=${encodeURIComponent(lote)}`);
+                const res = await fetch(`${API_BASE}/api/sumario?lote=${encodeURIComponent(lote)}`);
                 const data = await res.json();
                 
                 termBody.innerHTML = '';
@@ -1152,7 +1154,7 @@
         // Carrega os e-mails salvos no JSON a partir do Backend
         async function fetchEmails() {
             try {
-                const res = await fetch('/api/emails');
+                const res = await fetch(`${API_BASE}/api/emails`);
                 const data = await res.json();
                 
                 savedEmails = data;
@@ -1214,7 +1216,7 @@
         // Carrega os logs a partir do Backend
         async function fetchLogs() {
             try {
-                const res = await fetch('/api/logs?lines=35');
+                const res = await fetch(`${API_BASE}/api/logs?lines=35`);
                 const lines = await res.json();
                 
                 const termBody = document.getElementById('terminal-body');
@@ -1260,7 +1262,7 @@
             btnSubmit.setAttribute('disabled', 'true');
             
             try {
-                const res = await fetch(`/api/nucleos/${nucleoId}/lotes`);
+                const res = await fetch(`${API_BASE}/api/nucleos/${nucleoId}/lotes`);
                 const data = await res.json();
                 
                 currentNucleoLotes = data.lotes;
@@ -1307,7 +1309,7 @@
             hideError();
             
             try {
-                const response = await fetch('/api/nucleos/generate', {
+                const response = await fetch(`${API_BASE}/api/nucleos/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nucleo: parseInt(nucleo) })
@@ -1531,7 +1533,7 @@
             hideError();
             
             try {
-                const response = await fetch('/api/generate', {
+                const response = await fetch(`${API_BASE}/api/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1634,7 +1636,7 @@
             showEmailFeedback("Enviando e-mail...", "info");
             
             try {
-                const response = await fetch('/api/send-email', {
+                const response = await fetch(`${API_BASE}/api/send-email`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1931,7 +1933,7 @@
             showEmailSumarioFeedback("Enviando e-mail...", "info");
             
             try {
-                const response = await fetch('/api/send-sumario-email', {
+                const response = await fetch(`${API_BASE}/api/send-sumario-email`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

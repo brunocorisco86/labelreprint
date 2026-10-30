@@ -1,12 +1,18 @@
-# Graph Report - .  (2026-07-10)
+# Graph Report - labelreprint  (2026-10-30)
 
 ## Corpus Check
-- Corpus is ~34,650 words - fits in a single context window. You may not need a graph.
+- 45 files · ~36,554 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 195 nodes · 254 edges · 33 communities (26 shown, 7 thin omitted)
-- Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 18 edges (avg confidence: 0.82)
+- 221 nodes · 313 edges · 33 communities (14 shown, 8 thin omitted)
+- Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 21 edges (avg confidence: 0.92)
 - Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `adc4fb75`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - Web Server & Email System
@@ -21,6 +27,7 @@
 - Nucleo-wise Label Generation
 - Production Logs & LoggerWriter
 - Web UI & Branding Assets
+- API Integration Testing
 - Manual Label Emitting CLI
 - PDF Coordinates & Date Calculation
 - Changelog & PDF Compression
@@ -32,16 +39,16 @@
 - Python Dependencies Configuration
 
 ## God Nodes (most connected - your core abstractions)
-1. `BatchGenerator` - 24 edges
-2. `PDFLabelWriter` - 20 edges
-3. `DataManager` - 13 edges
+1. `BatchGenerator` - 23 edges
+2. `PDFLabelWriter` - 21 edges
+3. `DataManager` - 19 edges
 4. `sanitize_folder_name()` - 10 edges
-5. `LoggerWriter` - 8 edges
-6. `EmailSender` - 8 edges
-7. `Relatório de Estatísticas Descritivas` - 8 edges
-8. `LoggerWriter` - 7 edges
+5. `EmailSender` - 8 edges
+6. `Relatório de Estatísticas Descritivas` - 8 edges
+7. `LoggerWriter` - 6 edges
+8. `LoggerWriter` - 6 edges
 9. `main()` - 6 edges
-10. `process_all_templates()` - 5 edges
+10. `_is_na()` - 6 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Validação de Recolhas e Sobras de Ração` --semantically_similar_to--> `Detecção de Sobras do Lote Anterior`  [INFERRED] [semantically similar]
@@ -65,23 +72,23 @@
 - **CVALE Feed Templates (Chunk 2)** — home_brunoconter_documentos_1_c_vale_2_projetos_10_reimpressao_rotulos_assets_rotulostemplate_cvale_3_inicial2_cm_pdf, home_brunoconter_documentos_1_c_vale_2_projetos_10_reimpressao_rotulos_assets_rotulostemplate_cvale_3_inicial2_gg_pdf, home_brunoconter_documentos_1_c_vale_2_projetos_10_reimpressao_rotulos_assets_rotulostemplate_cvale_4_crescimento_cm_pdf, home_brunoconter_documentos_1_c_vale_2_projetos_10_reimpressao_rotulos_assets_rotulostemplate_cvale_4_crescimento_gg_pdf, home_brunoconter_documentos_1_c_vale_2_projetos_10_reimpressao_rotulos_assets_rotulostemplate_cvale_5_abate_cm_pdf, home_brunoconter_documentos_1_c_vale_2_projetos_10_reimpressao_rotulos_assets_rotulostemplate_cvale_5_abate_gg_pdf [INFERRED 0.85]
 - **Fase 4 Crescimento Templates** — home_brunoconter_documentos_1_c_vale_2_projetos_10_reimpressao_rotulos_assets_rotulostemplate_cvale_4_crescimento_cm_pdf, home_brunoconter_documentos_1_c_vale_2_projetos_10_reimpressao_rotulos_assets_rotulostemplate_cvale_4_crescimento_gg_pdf, home_brunoconter_documentos_1_c_vale_2_projetos_10_reimpressao_rotulos_assets_rotulostemplate_lar_4_crescimento_cm_pdf [INFERRED 0.85]
 
-## Communities (33 total, 7 thin omitted)
+## Communities (33 total, 8 thin omitted)
 
 ### Community 0 - "Web Server & Email System"
 Cohesion: 0.09
-Nodes (14): EmailSender, Classe responsável por estruturar e enviar e-mails de notificação     contendo o, Envia o relatório de sumário de entregas do lote composto por e-mail., Envia o rótulo PDF ou ZIP gerado para o e-mail informado., generate_label(), generate_nucleo_labels(), get_emails(), get_templates() (+6 more)
+Nodes (33): route, EmailSender, Classe responsável por estruturar e enviar e-mails de notificação contendo os…, Envia o relatório de sumário de entregas do lote composto por e-mail., Envia o rótulo PDF ou ZIP gerado para o e-mail informado., ai_generate_label(), ai_generate_nucleo(), ai_get_sumario() (+25 more)
 
 ### Community 1 - "Label PDF Generator & Testing"
-Cohesion: 0.16
-Nodes (14): main(), main(), main(), BatchGenerator, Sanitiza strings para nomes de pastas seguros no Linux:     Remove acentos, cara, Gera um arquivo de texto resumindo as entregas, retornos, sobras e transferência, Classe responsável por coordenar a geração em lote de rótulos retroativos     a, Mescla todos os PDFs de rótulos ativos de um lote em um único PDF         no for (+6 more)
+Cohesion: 0.12
+Nodes (19): main(), load_options(), load_shelf_life(), main(), main(), BatchGenerator, _is_na(), Gera um arquivo de texto resumindo as entregas, retornos, sobras e… (+11 more)
 
 ### Community 2 - "ETL & Data Management"
-Cohesion: 0.13
-Nodes (8): DataManager, Seleciona o arquivo de template PDF com base na fábrica, fase e tipo de ração (C, Executa todo o pipeline de ETL e salva os dados no SQLite, Classe responsável por processar os dados brutos de entregas, fazendas e regiões, Normaliza a string FazendaLote para remover zeros à esquerda do lote e garantir, Extrai o lote ordinal da string FazendaLote (ex: '1351-1' -> '01'), Mapeia o nome da fórmula para a fase da ração correspondente, Identifica a fábrica produtora da ração com base nas observações de frete
+Cohesion: 0.11
+Nodes (14): DataManager, _is_na(), Identifica a fábrica produtora da ração com base nas observações de frete, Seleciona o arquivo de template PDF com base na fábrica, fase e tipo de ração…, Executa todo o pipeline de ETL e salva os dados no SQLite, Verifica se um valor é nulo/NaN sem depender de pandas no escopo global., Classe responsável por processar os dados brutos de entregas, fazendas e…, Inicializa a tabela DestinatariosSalvos no SQLite para armazenar e-mails de… (+6 more)
 
 ### Community 3 - "Pipeline Orchestration & Grids"
-Cohesion: 0.19
-Nodes (10): generate_grid_overlay(), process_all_templates(), Gera um PDF em memória com uma grade de coordenadas X e Y     nas dimensões espe, Varre a pasta de templates e cria os PDFs de grade correspondentes., LoggerWriter, main(), Wrapper para redirecionar o stdout/stderr para o console e o arquivo de log ao m, parse_template_name() (+2 more)
+Cohesion: 0.18
+Nodes (10): generate_grid_overlay(), process_all_templates(), Gera um PDF em memória com uma grade de coordenadas X e Y nas dimensões…, Varre a pasta de templates e cria os PDFs de grade correspondentes., LoggerWriter, main(), Wrapper para redirecionar o stdout/stderr para o console e o arquivo de log ao…, parse_template_name() (+2 more)
 
 ### Community 4 - "Documentation & System Architecture"
 Cohesion: 0.20
@@ -107,13 +114,13 @@ Nodes (3): Restrição de Ionóforos, Lar Cooperativa Agroindustrial, Narasina
 Cohesion: 0.70
 Nodes (4): get_entregas_count(), get_lotes_by_nucleo(), get_nucleos(), main()
 
-### Community 11 - "Web UI & Branding Assets"
-Cohesion: 0.40
-Nodes (5): favicon(), C.Vale Branding System, C.Vale Logo Image, Interface do Portal (HTML), Interface em Três Abas
+### Community 10 - "Production Logs & LoggerWriter"
+Cohesion: 0.33
+Nodes (3): LoggerWriter, main(), Wrapper para redirecionar o stdout/stderr para o console e o arquivo de log ao…
 
-### Community 13 - "Manual Label Emitting CLI"
-Cohesion: 0.83
-Nodes (3): load_options(), load_shelf_life(), main()
+### Community 11 - "Web UI & Branding Assets"
+Cohesion: 0.50
+Nodes (4): C.Vale Branding System, C.Vale Logo Image, Interface do Portal (HTML), Interface em Três Abas
 
 ### Community 15 - "Changelog & PDF Compression"
 Cohesion: 0.67
@@ -124,24 +131,24 @@ Cohesion: 1.00
 Nodes (3): C.Vale Brand Identity, C.Vale Logo Image, C.Vale Visual Identity Concept
 
 ## Knowledge Gaps
-- **29 isolated node(s):** `deploy_data.sh script`, `setup_alpine.sh script`, `Desduplicação, Normalização e Omissão no ETL`, `Lote de Ração Impresso`, `Sinonímia de Certificações (Global Gap / Global SLP)` (+24 more)
-  These have ≤1 connection - possible missing edges or undocumented components.
-- **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **31 isolated node(s):** `deploy_data.sh script`, `setup_alpine.sh script`, `graphify`, `Workflow: graphify`, `Desduplicação, Normalização e Omissão no ETL` (+26 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 101 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `BatchGenerator` connect `Label PDF Generator & Testing` to `Web Server & Email System`, `Nucleo-wise Label Generation`, `Production Logs & LoggerWriter`, `Pipeline Orchestration & Grids`?**
-  _High betweenness centrality (0.214) - this node is a cross-community bridge._
-- **Why does `DataManager` connect `ETL & Data Management` to `Pipeline Orchestration & Grids`?**
-  _High betweenness centrality (0.087) - this node is a cross-community bridge._
-- **Why does `PDFLabelWriter` connect `Label PDF Generator & Testing` to `Web Server & Email System`, `Manual Label Emitting CLI`, `PDF Coordinates & Date Calculation`?**
-  _High betweenness centrality (0.079) - this node is a cross-community bridge._
-- **Are the 3 inferred relationships involving `BatchGenerator` (e.g. with `LoggerWriter` and `LoggerWriter`) actually correct?**
+  _High betweenness centrality (0.136) - this node is a cross-community bridge._
+- **Why does `DataManager` connect `ETL & Data Management` to `Web Server & Email System`, `Pipeline Orchestration & Grids`?**
+  _High betweenness centrality (0.131) - this node is a cross-community bridge._
+- **Why does `PDFLabelWriter` connect `Label PDF Generator & Testing` to `Web Server & Email System`?**
+  _High betweenness centrality (0.076) - this node is a cross-community bridge._
+- **Are the 3 inferred relationships involving `BatchGenerator` (e.g. with `PDFLabelWriter` and `ai_generate_nucleo()`) actually correct?**
   _`BatchGenerator` has 3 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 2 inferred relationships involving `LoggerWriter` (e.g. with `DataManager` and `BatchGenerator`) actually correct?**
-  _`LoggerWriter` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Gera um PDF em memória com uma grade de coordenadas X e Y     nas dimensões espe`, `Varre a pasta de templates e cria os PDFs de grade correspondentes.`, `Wrapper para redirecionar o stdout/stderr para o console e o arquivo de log ao m` to the rest of the system?**
-  _57 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Are the 3 inferred relationships involving `PDFLabelWriter` (e.g. with `BatchGenerator` and `ai_generate_label()`) actually correct?**
+  _`PDFLabelWriter` has 3 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `deploy_data.sh script`, `setup_alpine.sh script`, `graphify` to the rest of the system?**
+  _31 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Web Server & Email System` be split into smaller, more focused modules?**
-  _Cohesion score 0.09359605911330049 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09102564102564102 - nodes in this community are weakly interconnected._

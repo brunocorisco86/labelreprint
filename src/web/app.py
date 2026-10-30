@@ -3,12 +3,12 @@ import sys
 import json
 import sqlite3
 import logging
-import pandas as pd
 import tempfile
 import zipfile
 import shutil
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request, send_from_directory
+from flask import Flask, render_template, jsonify, request, send_from_directory, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Adiciona a raiz do projeto ao sys.path para permitir a importação de src
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -36,6 +36,8 @@ except Exception as e:
     print(f"Erro ao inicializar DataManager no Flask app startup: {e}")
 
 app = Flask(__name__)
+# Suporte nativo a Reverse Proxy em subpath (ex: https://brunoconter.duckdns.org/impressaorotulos/ via Caddy)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Configuração do Logger incremental (modo append)
 LOGS_DIR = os.path.join(root_dir, "logs")
@@ -105,6 +107,10 @@ def load_shelf_life():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "ok"})
 
 @app.route('/favicon.ico')
 def favicon():
@@ -227,7 +233,7 @@ def generate_label():
             return jsonify({
                 "success": True,
                 "filename": zip_filename,
-                "download_url": f"/download/{zip_filename}",
+                "download_url": url_for("download_file", filename=zip_filename),
                 "is_zip": True,
                 "summary": {
                     "fornecedor": "TODOS",
@@ -315,7 +321,7 @@ def generate_label():
             return jsonify({
                 "success": True,
                 "filename": filename,
-                "download_url": f"/download/{filename}",
+                "download_url": url_for("download_file", filename=filename),
                 "summary": {
                     "fornecedor": fornecedor,
                     "fase": selected_option["fase"],
@@ -346,8 +352,11 @@ def get_nucleos():
         
     conn = sqlite3.connect(DATABASE_PATH)
     try:
-        df_nucleos = pd.read_sql("SELECT DISTINCT R.Nucleo FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo IS NOT NULL ORDER BY R.Nucleo", conn)
-        return jsonify(df_nucleos["Nucleo"].tolist())
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT DISTINCT R.Nucleo FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo IS NOT NULL ORDER BY R.Nucleo"
+        )
+        return jsonify([row[0] for row in cursor.fetchall()])
     except Exception as e:
         logger.error(f"Erro ao buscar núcleos no SQLite: {e}")
         return jsonify({"error": str(e)}), 500
@@ -361,29 +370,27 @@ def get_nucleo_lotes(nucleo_id):
         
     conn = sqlite3.connect(DATABASE_PATH)
     try:
+        cursor = conn.cursor()
         # Busca lotes do núcleo
-        df_lotes = pd.read_sql(
+        cursor.execute(
             "SELECT DISTINCT F.FazendaLote, R.NomeFazenda AS [Nome Aviário] FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo = ? AND F.FazendaLote IS NOT NULL", 
-            conn, 
-            params=(nucleo_id,)
+            (nucleo_id,)
         )
-        lotes_lista = df_lotes["FazendaLote"].tolist()
+        rows = cursor.fetchall()
+        lotes_lista = [r[0] for r in rows]
         
         # Conta entregas
         if lotes_lista:
             placeholders = ",".join(["?"] * len(lotes_lista))
-            cursor = conn.cursor()
             cursor.execute(f"SELECT COUNT(*) FROM EntregasRacao WHERE FazendaLote IN ({placeholders})", lotes_lista)
             total_entregas = cursor.fetchone()[0]
         else:
             total_entregas = 0
             
-        lotes_details = []
-        for _, r in df_lotes.iterrows():
-            lotes_details.append({
-                "lote_composto": r["FazendaLote"],
-                "nome_aviario": r["Nome Aviário"]
-            })
+        lotes_details = [
+            {"lote_composto": r[0], "nome_aviario": r[1]}
+            for r in rows
+        ]
             
         return jsonify({
             "nucleo": nucleo_id,
@@ -410,12 +417,12 @@ def generate_nucleo_labels():
         
     conn = sqlite3.connect(DATABASE_PATH)
     try:
-        df_lotes = pd.read_sql(
+        cursor = conn.cursor()
+        cursor.execute(
             "SELECT DISTINCT F.FazendaLote FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo = ? AND F.FazendaLote IS NOT NULL", 
-            conn, 
-            params=(nucleo_id,)
+            (nucleo_id,)
         )
-        lotes_lista = df_lotes["FazendaLote"].tolist()
+        lotes_lista = [r[0] for r in cursor.fetchall()]
     except Exception as e:
         logger.error(f"Erro ao buscar lotes: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
@@ -558,11 +565,11 @@ def get_produtores():
         
     conn = sqlite3.connect(DATABASE_PATH)
     try:
-        df_produtores = pd.read_sql(
-            "SELECT DISTINCT R.NomeFazenda as nome FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.NomeFazenda IS NOT NULL ORDER BY R.NomeFazenda", 
-            conn
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT DISTINCT R.NomeFazenda as nome FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.NomeFazenda IS NOT NULL ORDER BY R.NomeFazenda"
         )
-        return jsonify(df_produtores["nome"].tolist())
+        return jsonify([row[0] for row in cursor.fetchall()])
     except Exception as e:
         logger.error(f"Erro ao buscar produtores no SQLite: {e}")
         return jsonify({"error": str(e)}), 500
@@ -580,12 +587,12 @@ def get_produtores_lotes():
         
     conn = sqlite3.connect(DATABASE_PATH)
     try:
-        df_lotes = pd.read_sql(
+        cursor = conn.cursor()
+        cursor.execute(
             "SELECT DISTINCT F.FazendaLote FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.NomeFazenda = ? AND F.FazendaLote IS NOT NULL ORDER BY F.FazendaLote", 
-            conn, 
-            params=(produtor,)
+            (produtor,)
         )
-        return jsonify(df_lotes["FazendaLote"].tolist())
+        return jsonify([row[0] for row in cursor.fetchall()])
     except Exception as e:
         logger.error(f"Erro ao buscar lotes do produtor {produtor}: {e}")
         return jsonify({"error": str(e)}), 500
@@ -678,39 +685,6 @@ def get_sumario():
         return jsonify({"error": str(e)}), 500
     finally:
         conn.close()
-
-# ----------------- ENDPOINTS DE INTEGRAÇÃO TELEGRAM -----------------
-
-@app.route('/api/telegram/user/<int:telegram_id>')
-def get_telegram_user(telegram_id):
-    try:
-        manager = DataManager(db_path=DATABASE_PATH)
-        email = manager.get_telegram_user(telegram_id)
-        return jsonify({"telegram_id": telegram_id, "email": email})
-    except Exception as e:
-        logger.error(f"Erro ao consultar usuário do Telegram {telegram_id}: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/telegram/user', methods=['POST'])
-def save_telegram_user():
-    data = request.json
-    if not data:
-        return jsonify({"success": False, "error": "JSON body é obrigatório."}), 400
-        
-    telegram_id = data.get('telegram_id')
-    email = data.get('email')
-    username = data.get('username')
-    
-    if not telegram_id or not email:
-        return jsonify({"success": False, "error": "telegram_id e email são obrigatórios."}), 400
-        
-    try:
-        manager = DataManager(db_path=DATABASE_PATH)
-        success = manager.save_telegram_user(telegram_id, email, username)
-        return jsonify({"success": success})
-    except Exception as e:
-        logger.error(f"Erro ao salvar usuário do Telegram {telegram_id}: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
 
 # ==============================================================================
 #                      ENDPOINTS DE INTEGRAÇÃO COM AGENTES DE IA (API REST)
@@ -862,7 +836,7 @@ def ai_generate_label():
             output_path=output_path
         )
         
-        download_url = f"{request.url_root}download/{filename}"
+        download_url = url_for("download_file", filename=filename, _external=True)
         
         return jsonify({
             "success": True,
@@ -901,12 +875,12 @@ def ai_generate_nucleo():
         
     conn = sqlite3.connect(DATABASE_PATH)
     try:
-        df_lotes = pd.read_sql(
+        cursor = conn.cursor()
+        cursor.execute(
             "SELECT DISTINCT F.FazendaLote FROM FiltroLotesAtivos F JOIN Regioes R ON F.Fazenda = R.Aviario WHERE R.Nucleo = ? AND F.FazendaLote IS NOT NULL", 
-            conn, 
-            params=(nucleo_id,)
+            (nucleo_id,)
         )
-        lotes_lista = df_lotes["FazendaLote"].tolist()
+        lotes_lista = [r[0] for r in cursor.fetchall()]
     except Exception as e:
         logger.error(f"Erro ao buscar lotes para o núcleo {nucleo_id}: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
@@ -1024,4 +998,5 @@ def ai_get_sumario():
 if __name__ == "__main__":
     # Permite passar a porta por variável de ambiente para flexibilidade no Homelab
     port = int(os.getenv("PORT", 5001))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    debug = os.getenv("FLASK_DEBUG", "0") == "1"
+    app.run(host="0.0.0.0", port=port, debug=debug)
