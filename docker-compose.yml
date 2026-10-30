@@ -11,6 +11,9 @@ services:
     environment:
       - TZ=America/Sao_Paulo
       - PYTHONUNBUFFERED=1
+      - DATABASE_PATH=/app/data/processed/entregas_processadas.db
+      - EXPORT_DIR=/app/Export
+      - TEMPLATES_DIR=/app/assets/RotulosTemplate
     ports:
       - "127.0.0.1:${WEB_PORT:-5001}:5001"
     volumes:
